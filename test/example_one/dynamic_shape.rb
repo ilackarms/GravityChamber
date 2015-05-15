@@ -18,7 +18,7 @@ module DynamicShape
     @shape.u = fric if self.respond_to?("fric")
     @space.add_body(body) unless @fixed
     @space.add_shape(@shape)
-    @color = 0xFF85A3C2
+    @color = 0xFFFFFF00
   end
 
   def draw_polygon(offset_x=0, offset_y=0)

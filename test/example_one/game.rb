@@ -5,6 +5,7 @@ require_relative 'player'
 require_relative 'wall'
 require_relative 'kill_zone'
 require_relative 'goal_zone'
+require_relative 'power_up'
 include Gosu
 
 class Game < Window
@@ -17,7 +18,7 @@ class Game < Window
 
   DEBUG_MODE = false
 
-  attr_accessor :walls
+  attr_accessor :game_objects
 
   def initialize
     super(X_RES, Y_RES, false)
@@ -30,6 +31,8 @@ class Game < Window
     @space = CP::Space.new
     @space.damping = VISCOUS_DAMPING
     @space.gravity = CP::Vec2.new(0,GRAVITY)
+    #initialize safe deletion array
+    @safe_removal_array = []
 
     load_level @current_level
     if DEBUG_MODE
@@ -55,6 +58,16 @@ class Game < Window
       false
     end
 
+    @space.add_collision_func :player, :attractor_power do |player_shape, powerup_shape|
+      @player.activate_powerup :attractor_power
+      safe_remove(powerup_shape.object)
+      false
+    end
+  end
+
+  def safe_remove game_object
+    @game_objects.delete(game_object)
+    @safe_removal_array << game_object
   end
 
   def load_level index
@@ -66,7 +79,7 @@ class Game < Window
     #level 1
     level_array << lambda {
       @blocks = []
-      @walls = []
+      @game_objects = []
       points = []
       points << [0,1]
       points << [3,1]
@@ -74,46 +87,47 @@ class Game < Window
       points << [5,2]
       points << [5,4]
       points << [6,4]
-      @walls += construct_connected_walls(points)
+      @game_objects += construct_connected_walls(points)
       points = []
       points << [7,4]
       points << [10,4]
-      @walls += construct_connected_walls(points)
+      @game_objects += construct_connected_walls(points)
       points = []
       points << [-15,0.25]
       points << [15,0.25]
-      @walls += construct_connected_kill_zones(points)
-      @walls << GoalZone.new(self, @space, 600, 400)
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 600, 400)
       @player = Player.new(self, @space, 40, 100)
     }
 
     level_array << lambda {
       @blocks = []
-      @walls = []
+      @game_objects = []
       points = []
       points << [0,1]
       points << [2,1]
       points << [2,2]
       points << [4,2]
       points << [4,5]
-      @walls += construct_connected_walls(points)
+      @game_objects += construct_connected_walls(points)
       points = []
       points << [3.1,4.5]
       points << [3.1,9]
-      @walls += construct_connected_walls(points)
+      @game_objects += construct_connected_walls(points)
       points = []
       points << [4,8]
       points << [7,8]
-      @walls += construct_connected_walls(points)
+      @game_objects += construct_connected_walls(points)
       points = []
       points << [8,8]
       points << [10,8]
-      @walls += construct_connected_walls(points)
+      @game_objects += construct_connected_walls(points)
       points = []
       points << [-15,0.25]
       points << [15,0.25]
-      @walls += construct_connected_kill_zones(points)
-      @walls << GoalZone.new(self, @space, 600, 600)
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 600, 600)
+      @game_objects << PowerUp.new(self, @space, 60, 100, :attractor_power)
       @player = Player.new(self, @space, 40, 100)
     }
     level_array
@@ -121,7 +135,7 @@ class Game < Window
 
   def attract_all_towards_point p, magnitude
     all_bodies = []
-    all_bodies += @walls
+    all_bodies += @game_objects
     all_bodies << @player
     @debug_force_lines = []
     all_bodies.each do
@@ -141,11 +155,16 @@ class Game < Window
       @space.step(PHYSICS_TIME_DELTA)
       @player.update
     end
+    @safe_removal_array.each do
+      |obj|
+      @space.remove_shape(obj.shape)
+      @safe_removal_array.delete(obj)
+    end
   end
 
   def draw
     @blocks.each{|block| block.draw}
-    @walls.each{|wall| wall.draw}
+    @game_objects.each{|wall| wall.draw}
     @player.draw
     if DEBUG_MODE
       @debug_force_lines.each do

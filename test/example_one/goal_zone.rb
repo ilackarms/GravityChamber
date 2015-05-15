@@ -9,20 +9,21 @@ include Gosu
 class GoalZone < Movable
   MASS = 100
   ZERO_VEC = CP::Vec2.new(0, 0)
-  SIZE = 10
+  SIZE = 15
 
   attr_accessor :is_grounded
 
   def initialize(window, space, x, y)
     @window = window
     @space = space
-    @bounds = [CP::Vec2.new(-0.5,-0.5) * SIZE, CP::Vec2.new(-0.5,0.5) * SIZE, CP::Vec2.new(0.5,0.5) * SIZE, CP::Vec2.new(0.5,-0.5) * SIZE]
+    @bounds = [CP::Vec2.new(-0.5,-0.65) * SIZE, CP::Vec2.new(-0.5,0.65) * SIZE, CP::Vec2.new(0.5,0.65) * SIZE, CP::Vec2.new(0.5,-0.65) * SIZE]
     create_dynamic_poly(x, y, MASS, :goal_zone)
+    @color = 0xFF0066FF
   end
 
   def draw
-    @color += 0x0000000E
-    @color %= 0xFAFFFFFF + 0xFAFFFFFF
+    @color += 0x00000001
+    @color = @color % (0xFFFFFFFF - 0xFF0066FF) + 0xFF0066FF
     draw_polygon
   end
 

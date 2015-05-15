@@ -61,26 +61,32 @@ class Player < Movable
     true
   end
 
+  def activate_powerup power
+    @active_power = power
+  end
+
   def is_grounded?
     @is_grounded > 0
   end
 
   def handle_input
-    if @window.button_down? Gosu::KbA or @window.button_down? Gosu::GpLeft then
+    if @window.button_down? Gosu::KbA or @window.button_down? Gosu::GpLeft or @window.button_down? Gosu::KbLeft then
       # @shape.body.apply_force(LEFT * ACCELERATION, ZERO_VEC)
       @shape.body.v = CP::Vec2.new(-1 * ACCELERATION, @shape.body.v.y)
     end
-    if @window.button_down? Gosu::KbD or @window.button_down? Gosu::GpRight then
+    if @window.button_down? Gosu::KbD or @window.button_down? Gosu::GpRight or @window.button_down? Gosu::KbRight then
       # @shape.body.apply_force(RIGHT * ACCELERATION, ZERO_VEC)
       @shape.body.v = CP::Vec2.new(ACCELERATION, @shape.body.v.y)
     end
   end
 
   def handle_button_down id
-    if id == Button::KbW && is_grounded?
-      # @shape.body.v = @shape.body.v + CP::Vec2.new(0, JUMP_SPEED)
-      @shape.body.apply_impulse CP::Vec2.new(0, JUMP_SPEED * 3), ZERO_VEC
-      @is_grounded = 0
+    if id == Button::KbW or id == Button::KbUp
+        if is_grounded?
+          # @shape.body.v = @shape.body.v + CP::Vec2.new(0, JUMP_SPEED)
+          @shape.body.apply_impulse CP::Vec2.new(0, JUMP_SPEED * 3), ZERO_VEC
+          @is_grounded = 0
+        end
     end
     if powers_enabled?
       if id == Gosu::MsLeft
@@ -94,7 +100,7 @@ class Player < Movable
           end
         end
         #if we didnt click on a sphere, make one
-        if not clicked_on_sphere
+        unless clicked_on_sphere
           @spheres << AttractionSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GREEN)
         end
       end
