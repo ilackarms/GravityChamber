@@ -6,6 +6,7 @@ require_relative 'wall'
 require_relative 'kill_zone'
 require_relative 'goal_zone'
 require_relative 'power_up'
+require_relative 'trigger_object'
 include Gosu
 
 class Game < Window
@@ -13,8 +14,8 @@ class Game < Window
   PHYSICS_TIME_DELTA = 1.0/350.0
   VISCOUS_DAMPING = 1
   GRAVITY = -30.0
-  X_RES = 640
-  Y_RES = 480
+  X_RES = 800
+  Y_RES = 600
 
   DEBUG_MODE = false
 
@@ -22,12 +23,11 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 0
+    @current_level = 3
     init_and_refresh_level
   end
 
   def init_and_refresh_level
-    self.caption = "The Elusive Mr. Wimbly"
     @space = CP::Space.new
     @space.damping = VISCOUS_DAMPING
     @space.gravity = CP::Vec2.new(0,GRAVITY)
@@ -35,9 +35,14 @@ class Game < Window
     @safe_removal_array = []
 
     load_level @current_level
+    @special_draw_instructions = []
+    @special_behaviors = []
     if DEBUG_MODE
       @debug_force_lines = []
     end
+
+    #set window title
+    self.caption = "The Elusive Mr. Wimbly - #{@level_name}"
 
     #add collision functions
     ##collision function for player and ground -> allow player to be grounded while touching wall
@@ -63,6 +68,22 @@ class Game < Window
       safe_remove(powerup_shape.object)
       false
     end
+
+    #trigger collision. can be visible/invisible. trigger.object is a lambda
+    #special behaviors is in object[0], special draw instructions are in object[1]
+    #nil if no instruction
+    @space.add_collision_func :player, :trigger do |player_shape, trigger_shape|
+      if trigger_shape.object[0] != nil
+        @special_behaviors << trigger_shape.object[0]
+        end
+      if trigger_shape.object[1] != nil
+        @special_draw_instructions << trigger_shape.object[1]
+      end
+      @special_draw_instructions
+      safe_remove(trigger_shape.object[2])
+      false
+    end
+
   end
 
   def safe_remove game_object
@@ -71,11 +92,12 @@ class Game < Window
   end
 
   def load_level index
-    levels[index].call
+    define_levels[index].call
   end
 
-  def levels
+  def define_levels
     level_array = []
+
     #level 1
     level_array << lambda {
       @blocks = []
@@ -83,14 +105,14 @@ class Game < Window
       points = []
       points << [0,1]
       points << [3,1]
-      points << [3,2]
-      points << [5,2]
-      points << [5,4]
-      points << [6,4]
+      points << [3,1.5]
+      points << [5,1.5]
+      points << [5,3]
+      points << [6,3]
       @game_objects += construct_connected_walls(points)
       points = []
-      points << [7,4]
-      points << [10,4]
+      points << [6.65,3]
+      points << [10,3]
       @game_objects += construct_connected_walls(points)
       points = []
       points << [-15,0.25]
@@ -98,8 +120,10 @@ class Game < Window
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 600, 400)
       @player = Player.new(self, @space, 40, 100)
+      @level_name = 'Jump'
     }
 
+    #level 2
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -107,15 +131,15 @@ class Game < Window
       points << [0,1]
       points << [2,1]
       points << [2,2]
-      points << [4,2]
-      points << [4,5]
+      points << [3.6,2]
+      points << [3.6,5]
       @game_objects += construct_connected_walls(points)
       points = []
-      points << [3.1,4.5]
-      points << [3.1,9]
+      points << [3,4.5]
+      points << [3,9]
       @game_objects += construct_connected_walls(points)
       points = []
-      points << [4,8]
+      points << [3.7,8]
       points << [7,8]
       @game_objects += construct_connected_walls(points)
       points = []
@@ -126,10 +150,86 @@ class Game < Window
       points << [-15,0.25]
       points << [15,0.25]
       @game_objects += construct_connected_kill_zones(points)
-      @game_objects << GoalZone.new(self, @space, 600, 600)
-      @game_objects << PowerUp.new(self, @space, 60, 100, :attractor_power)
+      @game_objects << GoalZone.new(self, @space, 700, 600)
       @player = Player.new(self, @space, 40, 100)
+      @level_name = 'Climb'
     }
+
+    #level 3
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      points << [0,4]
+      points << [1.3,4]
+      points << [1.3,4.25]
+      points << [2.1,4.25]
+      points << [2.1,4]
+      points << [3.1,4]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [7,4]
+      points << [9,4]
+      points << [9,5.3]
+      points << [9.3,5.3]
+      points << [9,5.3]
+      points << [9,4]
+      points << [10,4]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [-15,0.25]
+      points << [15,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 750, 250)
+      trigger_follow = PowerUp.new(self, @space, 130, 350, :attractor_power, 0xFF66FF33)
+      @game_objects << trigger_follow
+
+      #define lambdas (0 = non-draw behaviors, 1 = draw behaviors)
+      special_lambdas = []
+      special_lambdas << lambda {
+        @text = Gosu::Font.new(self, "Courier", 36)
+      }
+      special_lambdas << lambda {
+        @text.draw("CLICK", X_RES/2 - 50, 50, 0, 1, 1, Gosu::Color::GRAY)
+      }
+      #####
+
+      @game_objects << TriggerObject.new(self, @space, 120, 250, 15, 15, special_lambdas, trigger_follow)
+      @player = Player.new(self, @space, 40, 250)
+      @level_name = 'Float'
+    }
+
+    #level 4
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      points << [0,2]
+      points << [1.3,2]
+      points << [1.3,2.25]
+      points << [2.1,2.25]
+      points << [2.1,2]
+      points << [6,2]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [7,4]
+      points << [9,4]
+      points << [9,5.3]
+      points << [9.3,5.3]
+      points << [9,5.3]
+      points << [9,4]
+      points << [10,4]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [-15,0.25]
+      points << [15,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 750, 250)
+      @game_objects << PowerUp.new(self, @space, 130, 350, :attractor_power, 0xFF66FF33)
+      @player = Player.new(self, @space, 40, 250)
+      @level_name = 'Float'
+    }
+
     level_array
   end
 
@@ -157,8 +257,14 @@ class Game < Window
     end
     @safe_removal_array.each do
       |obj|
+      #3rd index is the object itself
       @space.remove_shape(obj.shape)
       @safe_removal_array.delete(obj)
+    end
+    @special_behaviors.each do
+      |behavior|
+      behavior.call
+      @special_behaviors.delete(behavior)
     end
   end
 
@@ -166,6 +272,10 @@ class Game < Window
     @blocks.each{|block| block.draw}
     @game_objects.each{|wall| wall.draw}
     @player.draw
+    @special_draw_instructions.each do
+      |instruction|
+      instruction.call
+    end
     if DEBUG_MODE
       @debug_force_lines.each do
         |pair|
