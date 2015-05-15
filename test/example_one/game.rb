@@ -10,10 +10,12 @@ include Gosu
 class Game < Window
   PHYSICS_RESOLUTION = 50
   PHYSICS_TIME_DELTA = 1.0/350.0
-  VISCOUS_DAMPING = 0.7
+  VISCOUS_DAMPING = 1
   GRAVITY = -30.0
   X_RES = 640
   Y_RES = 480
+
+  DEBUG_MODE = false
 
   attr_accessor :walls
 
@@ -30,6 +32,9 @@ class Game < Window
     @space.gravity = CP::Vec2.new(0,GRAVITY)
 
     load_level @current_level
+    if DEBUG_MODE
+      @debug_force_lines = []
+    end
 
     #add collision functions
     ##collision function for player and ground -> allow player to be grounded while touching wall
@@ -74,10 +79,9 @@ class Game < Window
       points << [7,4]
       points << [10,4]
       @walls += construct_connected_walls(points)
-
       points = []
-      points << [-10,0.25]
-      points << [10,0.25]
+      points << [-15,0.25]
+      points << [15,0.25]
       @walls += construct_connected_kill_zones(points)
       @walls << GoalZone.new(self, @space, 600, 400)
       @player = Player.new(self, @space, 40, 100)
@@ -95,7 +99,7 @@ class Game < Window
       @walls += construct_connected_walls(points)
       points = []
       points << [3.1,4.5]
-      points << [3,9]
+      points << [3.1,9]
       @walls += construct_connected_walls(points)
       points = []
       points << [4,8]
@@ -106,8 +110,8 @@ class Game < Window
       points << [10,8]
       @walls += construct_connected_walls(points)
       points = []
-      points << [-10,0.25]
-      points << [10,0.25]
+      points << [-15,0.25]
+      points << [15,0.25]
       @walls += construct_connected_kill_zones(points)
       @walls << GoalZone.new(self, @space, 600, 600)
       @player = Player.new(self, @space, 40, 100)
@@ -119,11 +123,15 @@ class Game < Window
     all_bodies = []
     all_bodies += @walls
     all_bodies << @player
+    @debug_force_lines = []
     all_bodies.each do
       |dynamic_shape|
       if dynamic_shape.is_a?(DynamicShape::Movable)
         body_pos = dynamic_shape.shape.body.p
-        dynamic_shape.shape.body.apply_force((p - body_pos)*magnitude / (p.dist(body_pos)**2), zero_vector)
+        dynamic_shape.shape.body.apply_impulse((p - body_pos)*magnitude / (p.dist(body_pos)**2), zero_vector)
+        if DEBUG_MODE
+          @debug_force_lines << [p, body_pos]
+        end
       end
     end
   end
@@ -139,6 +147,14 @@ class Game < Window
     @blocks.each{|block| block.draw}
     @walls.each{|wall| wall.draw}
     @player.draw
+    if DEBUG_MODE
+      @debug_force_lines.each do
+        |pair|
+        p1 = pair[0]
+        p2 = pair[1]
+        draw_line(p1.x, height - p1.y, Gosu::Color::RED, p2.x, height - p2.y, Gosu::Color::BLUE)
+      end
+    end
   end
 
   def more_blocks

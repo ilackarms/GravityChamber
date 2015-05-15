@@ -79,17 +79,29 @@ class Player < Movable
   def handle_button_down id
     if id == Button::KbW && is_grounded?
       # @shape.body.v = @shape.body.v + CP::Vec2.new(0, JUMP_SPEED)
-      @shape.body.apply_impulse CP::Vec2.new(0, JUMP_SPEED * 4), ZERO_VEC
+      @shape.body.apply_impulse CP::Vec2.new(0, JUMP_SPEED * 3), ZERO_VEC
       @is_grounded = 0
     end
     if powers_enabled?
       if id == Gosu::MsLeft
-        @spheres << AttractionSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY)
+        #if we click on a sphere we already have, make it bigger insetad of adding more
+        clicked_on_sphere = false
+        @spheres.each do
+        |sphere|
+          if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
+            sphere.amplify
+            clicked_on_sphere = true
+          end
+        end
+        #if we didnt click on a sphere, make one
+        if not clicked_on_sphere
+          @spheres << AttractionSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GREEN)
+        end
       end
       if id == Gosu::MsRight
         @spheres.each do
           |sphere|
-          if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < 20
+          if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
             @spheres.delete(sphere)
           end
         end
