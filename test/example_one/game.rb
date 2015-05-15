@@ -115,6 +115,19 @@ class Game < Window
     level_array
   end
 
+  def attract_all_towards_point p, magnitude
+    all_bodies = []
+    all_bodies += @walls
+    all_bodies << @player
+    all_bodies.each do
+      |dynamic_shape|
+      if dynamic_shape.is_a?(DynamicShape::Movable)
+        body_pos = dynamic_shape.shape.body.p
+        dynamic_shape.shape.body.apply_force((p - body_pos)*magnitude / (p.dist(body_pos)**2), zero_vector)
+      end
+    end
+  end
+
   def update
     PHYSICS_RESOLUTION.times do |repeat|
       @space.step(PHYSICS_TIME_DELTA)
@@ -138,7 +151,7 @@ class Game < Window
     if id == Button::KbF1 then
       init_and_refresh_level
     end
-    @player.handle_jumping id
+    @player.handle_button_down id
   end
 
   def construct_connected_walls points

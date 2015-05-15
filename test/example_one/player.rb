@@ -9,7 +9,7 @@ include DynamicShape
 include Gosu
 
 
-class Player
+class Player < Movable
   MASS = 100
   ACCELERATION = 1000/50
   JUMP_SPEED = 2000
@@ -37,7 +37,7 @@ class Player
     draw_polygon
     @cursor_sphere.draw @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
     @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
-    @spheres.each.draw
+    @spheres.each do |sphere| sphere.draw end
   end
 
   def fric
@@ -48,7 +48,24 @@ class Player
     0.5
   end
 
-  def handle_left_right_input
+  def update
+    @is_grounded -= 1
+    @spheres.each do
+      |sphere|
+      sphere.attract
+    end
+    handle_input
+  end
+
+  def powers_enabled?
+    true
+  end
+
+  def is_grounded?
+    @is_grounded > 0
+  end
+
+  def handle_input
     if @window.button_down? Gosu::KbA or @window.button_down? Gosu::GpLeft then
       # @shape.body.apply_force(LEFT * ACCELERATION, ZERO_VEC)
       @shape.body.v = CP::Vec2.new(-1 * ACCELERATION, @shape.body.v.y)
@@ -59,42 +76,24 @@ class Player
     end
   end
 
-  def is_grounded?
-    @is_grounded > 0
-    # #check immediately below player
-    # #iterate through all walls in window
-    # start = CP::Vec2.new(@shape.body.p.x, @shape.body.p.y + SIZE)
-    # stop = CP::Vec2.new(@shape.body.p.x, @shape.body.p.y - SIZE)
-    # sq_info = @shape.segment_query(start, stop) do
-    #   |shape, t, n|
-    # end
-    # puts sq_info.shape
-    # # sq_info != nil
-  end
-
-  def update
-    @is_grounded -= 1
-    handle_left_right_input
-    if powers_enabled?
-      if @window.button_down? Gosu::MsLeft
-        @spheres <<
-      end
-    end
-  end
-
-  def create_sphere x, y
-
-  end
-
-  def powers_enabled
-    true
-  end
-
-  def handle_jumping id
+  def handle_button_down id
     if id == Button::KbW && is_grounded?
       # @shape.body.v = @shape.body.v + CP::Vec2.new(0, JUMP_SPEED)
       @shape.body.apply_impulse CP::Vec2.new(0, JUMP_SPEED * 4), ZERO_VEC
       @is_grounded = 0
+    end
+    if powers_enabled?
+      if id == Gosu::MsLeft
+        @spheres << AttractionSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY)
+      end
+      if id == Gosu::MsRight
+        @spheres.each do
+          |sphere|
+          if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < 20
+            @spheres.delete(sphere)
+          end
+        end
+      end
     end
   end
 end

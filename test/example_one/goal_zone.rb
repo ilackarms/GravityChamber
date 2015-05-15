@@ -6,7 +6,7 @@ require_relative 'dynamic_shape'
 include DynamicShape
 include Gosu
 
-class GoalZone
+class GoalZone < Movable
   MASS = 100
   ZERO_VEC = CP::Vec2.new(0, 0)
   SIZE = 10

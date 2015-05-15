@@ -106,14 +106,12 @@ module Drawable
       if @particles.size < 6
         index = rand(0..start_points.size-1)
         @particles << ShootingParticle.new(@window, start_points[index], CP::Vec2.new(x,y), color)
-        puts start_points[index]
       end
 
       @particles.each do
         |particle|
         if particle.finished
           @particles.delete(particle)
-          puts "deleted"
         end
         particle.draw
       end

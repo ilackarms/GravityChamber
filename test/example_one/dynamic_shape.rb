@@ -1,5 +1,9 @@
 module DynamicShape
 
+  class Movable
+    attr_accessor :shape
+  end
+
   def zero_vector()
     CP::Vec2.new(0,0)
   end
