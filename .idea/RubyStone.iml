@@ -70,7 +70,6 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="jdk" jdkName="ruby-2.1.6-p336" jdkType="RUBY_SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" scope="PROVIDED" name="bigdecimal (v1.2.4, ruby-2.1.6-p336) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="chipmunk (v6.1.3.4, ruby-2.1.6-p336) [gem]" level="application" />
     <orderEntry type="library" scope="PROVIDED" name="gosu (v0.8.7.2, ruby-2.1.6-p336) [gem]" level="application" />
   </component>

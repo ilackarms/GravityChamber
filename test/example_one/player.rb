@@ -35,9 +35,11 @@ class Player < Movable
 
   def draw
     draw_polygon
-    @cursor_sphere.draw @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
-    @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
-    @spheres.each do |sphere| sphere.draw end
+    if @active_power == :attractor_power
+      @cursor_sphere.draw @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
+      @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
+      @spheres.each do |sphere| sphere.draw end
+    end
   end
 
   def fric
@@ -55,10 +57,6 @@ class Player < Movable
       sphere.attract
     end
     handle_input
-  end
-
-  def powers_enabled?
-    true
   end
 
   def activate_powerup power
@@ -88,7 +86,7 @@ class Player < Movable
           @is_grounded = 0
         end
     end
-    if powers_enabled?
+    if @active_power == :attractor_power
       if id == Gosu::MsLeft
         #if we click on a sphere we already have, make it bigger insetad of adding more
         clicked_on_sphere = false
