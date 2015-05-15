@@ -1,10 +1,13 @@
 require 'rubygems'
 require "enumerator"
 require 'gosu'
-require_relative 'physical_poly'
+require_relative 'drawables'
+require_relative 'dynamic_shape'
+require_relative 'attraction_sphere'
 
-include PhysicalPoly
+include DynamicShape
 include Gosu
+
 
 class Player
   MASS = 100
@@ -21,14 +24,20 @@ class Player
     @window = window
     @space = space
     @bounds = [CP::Vec2.new(0,1) * SIZE, CP::Vec2.new(0.951057,0.309017) * SIZE, CP::Vec2.new(0.587785252,-0.80901699437) * SIZE, CP::Vec2.new(-0.587785252,-0.80901699437) * SIZE, CP::Vec2.new(-0.951057,0.309017) * SIZE]
-    create_pyhsical_poly(x, y, MASS, :block)
+    create_dynamic_poly(x, y, MASS, :block)
     @shape.collision_type = :player
     @shape.object = self
     @is_grounded = 4
+    @cursor_sphere = Drawable::Circle.new @window
+    @cursor_particles = Drawable::AttractorParticleSystem.new @window
+    @spheres = []
   end
 
   def draw
     draw_polygon
+    @cursor_sphere.draw @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
+    @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
+    @spheres.each.draw
   end
 
   def fric
@@ -40,11 +49,11 @@ class Player
   end
 
   def handle_left_right_input
-    if @window.button_down? Gosu::KbLeft or @window.button_down? Gosu::GpLeft then
+    if @window.button_down? Gosu::KbA or @window.button_down? Gosu::GpLeft then
       # @shape.body.apply_force(LEFT * ACCELERATION, ZERO_VEC)
       @shape.body.v = CP::Vec2.new(-1 * ACCELERATION, @shape.body.v.y)
     end
-    if @window.button_down? Gosu::KbRight or @window.button_down? Gosu::GpRight then
+    if @window.button_down? Gosu::KbD or @window.button_down? Gosu::GpRight then
       # @shape.body.apply_force(RIGHT * ACCELERATION, ZERO_VEC)
       @shape.body.v = CP::Vec2.new(ACCELERATION, @shape.body.v.y)
     end
@@ -66,10 +75,23 @@ class Player
   def update
     @is_grounded -= 1
     handle_left_right_input
+    if powers_enabled?
+      if @window.button_down? Gosu::MsLeft
+        @spheres <<
+      end
+    end
+  end
+
+  def create_sphere x, y
+
+  end
+
+  def powers_enabled
+    true
   end
 
   def handle_jumping id
-    if id == Button::KbUp && is_grounded?
+    if id == Button::KbW && is_grounded?
       # @shape.body.v = @shape.body.v + CP::Vec2.new(0, JUMP_SPEED)
       @shape.body.apply_impulse CP::Vec2.new(0, JUMP_SPEED * 4), ZERO_VEC
       @is_grounded = 0

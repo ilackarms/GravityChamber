@@ -2,8 +2,9 @@ require 'rubygems'
 require 'gosu'
 require 'chipmunk'
 require_relative 'player'
-require_relative 'block'
 require_relative 'wall'
+require_relative 'kill_zone'
+require_relative 'goal_zone'
 include Gosu
 
 class Game < Window
@@ -18,15 +19,17 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    setup_gosu_and_chipmunk
-    load_level
+    @current_level = 0
+    init_and_refresh_level
   end
 
-  def setup_gosu_and_chipmunk
-    self.caption = "REALLY BORING!!!"
+  def init_and_refresh_level
+    self.caption = "The Elusive Mr. Wimbly"
     @space = CP::Space.new
     @space.damping = VISCOUS_DAMPING
     @space.gravity = CP::Vec2.new(0,GRAVITY)
+
+    load_level @current_level
 
     #add collision functions
     ##collision function for player and ground -> allow player to be grounded while touching wall
@@ -35,20 +38,81 @@ class Game < Window
       player.is_grounded = 500
       true
     end
+
+    @space.add_collision_func :player, :kill_zone do |player_shape, kill_zone_shape|
+      init_and_refresh_level
+      false
+    end
+
+    @space.add_collision_func :player, :goal_zone do |player_shape, goal_zone_shape|
+      @current_level += 1
+      init_and_refresh_level
+      false
+    end
+
   end
 
-  def load_level
-    @blocks = []
-    @walls = []
-    points = []
-    points << [0,1]
-    points << [3,1]
-    points << [3,2]
-    points << [5,2]
-    points << [5,4]
-    points << [7,4]
-    @walls += construct_level(points)
-    @player = Player.new(self, @space, 40, 100)
+  def load_level index
+    levels[index].call
+  end
+
+  def levels
+    level_array = []
+    #level 1
+    level_array << lambda {
+      @blocks = []
+      @walls = []
+      points = []
+      points << [0,1]
+      points << [3,1]
+      points << [3,2]
+      points << [5,2]
+      points << [5,4]
+      points << [6,4]
+      @walls += construct_connected_walls(points)
+      points = []
+      points << [7,4]
+      points << [10,4]
+      @walls += construct_connected_walls(points)
+
+      points = []
+      points << [-10,0.25]
+      points << [10,0.25]
+      @walls += construct_connected_kill_zones(points)
+      @walls << GoalZone.new(self, @space, 600, 400)
+      @player = Player.new(self, @space, 40, 100)
+    }
+
+    level_array << lambda {
+      @blocks = []
+      @walls = []
+      points = []
+      points << [0,1]
+      points << [2,1]
+      points << [2,2]
+      points << [4,2]
+      points << [4,5]
+      @walls += construct_connected_walls(points)
+      points = []
+      points << [3.1,4.5]
+      points << [3,9]
+      @walls += construct_connected_walls(points)
+      points = []
+      points << [4,8]
+      points << [7,8]
+      @walls += construct_connected_walls(points)
+      points = []
+      points << [8,8]
+      points << [10,8]
+      @walls += construct_connected_walls(points)
+      points = []
+      points << [-10,0.25]
+      points << [10,0.25]
+      @walls += construct_connected_kill_zones(points)
+      @walls << GoalZone.new(self, @space, 600, 600)
+      @player = Player.new(self, @space, 40, 100)
+    }
+    level_array
   end
 
   def update
@@ -72,19 +136,12 @@ class Game < Window
     if id == Button::KbEscape then close end
     if id == Button::KbSpace then more_blocks end
     if id == Button::KbF1 then
-      setup_gosu_and_chipmunk
-      load_level
+      init_and_refresh_level
     end
     @player.handle_jumping id
   end
 
-  def make_wall(p1, p2)
-    x_unit = X_RES / 10
-    y_unit = Y_RES / 10
-    Wall.new(self, @space, CP::Vec2.new(x_unit * p1[0],y_unit * p1[1]), CP::Vec2.new(x_unit * p2[0],y_unit * p2[1]))
-  end
-
-  def construct_level points
+  def construct_connected_walls points
     wall_list = []
     points.each_with_index  do
       |point, index|
@@ -93,10 +150,29 @@ class Game < Window
       end
       p1 = point
       p2 = points[index + 1]
-      wall_list << make_wall(p1, p2)
+      x_unit = X_RES / 10
+      y_unit = Y_RES / 10
+      wall_list << Wall.new(self, @space, CP::Vec2.new(x_unit * p1[0],y_unit * p1[1]), CP::Vec2.new(x_unit * p2[0],y_unit * p2[1]))
     end
     wall_list
   end
+
+  def construct_connected_kill_zones points
+    kill_zones = []
+    points.each_with_index  do
+      |point, index|
+      if index == points.size - 1
+        break
+      end
+      p1 = point
+      p2 = points[index + 1]
+      x_unit = X_RES / 10
+      y_unit = Y_RES / 10
+      kill_zones << KillZone.new(self, @space, CP::Vec2.new(x_unit * p1[0],y_unit * p1[1]), CP::Vec2.new(x_unit * p2[0],y_unit * p2[1]))
+    end
+    kill_zones
+  end
+
 end
 
 window = Game.new

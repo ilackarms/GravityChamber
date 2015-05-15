@@ -2,7 +2,6 @@ require 'rubygems'
 require 'gosu'
 require 'chipmunk'
 require_relative 'player'
-require_relative 'block'
 require_relative 'wall'
 require_relative 'game'
 include CP
