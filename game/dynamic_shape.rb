@@ -8,6 +8,19 @@ module DynamicShape
     CP::Vec2.new(0,0)
   end
 
+  def create_pyhsical_poly(x, y, mass, collision_tag)
+    moment_of_inertia = CP.moment_for_circle(mass, 5,0, zero_vector)
+    body = CP::Body.new(mass, moment_of_inertia)
+    @shape = CP::Shape::Poly.new(body, @bounds)#CP::Shape::Circle.new(body, 5,zero_vector)
+    @shape.collision_type = collision_tag
+    @shape.body.p = CP::Vec2.new(x,y)
+    @shape.e = elast if self.respond_to?("elast")
+    @shape.u = fric if self.respond_to?("fric")
+    @space.add_body(body) unless @fixed
+    @space.add_shape(@shape)
+    @color = 0xFFFFFF
+  end
+
   def create_dynamic_poly(x, y, mass, collision_tag)
     moment_of_inertia = CP.moment_for_circle(mass, 5,0, zero_vector)
     body = CP::Body.new(mass, moment_of_inertia)

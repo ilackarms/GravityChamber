@@ -40,6 +40,12 @@ class Player < Movable
       @cursor_sphere.draw @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
       @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
       @spheres.each do |sphere| sphere.draw end
+      if @spheres.size == @max_uses
+        @power_use_text.draw(@spheres.size.to_s + " / " + @max_uses.to_s, 25, 25, 0, 1, 1, Gosu::Color::GREEN)
+      else
+        @power_use_text.draw(@spheres.size.to_s + " / ", 25, 25, 0, 1, 1, Gosu::Color::GRAY)
+        @power_use_text.draw(@max_uses.to_s, 75, 25, 0, 1, 1, Gosu::Color::GREEN)
+      end
     end
   end
 
@@ -60,8 +66,10 @@ class Player < Movable
     handle_input
   end
 
-  def activate_powerup power
+  def activate_powerup power, max_uses
     @active_power = power
+    @max_uses = max_uses
+    @power_use_text = Gosu::Font.new(@window, 'Courier', 24)
   end
 
   def is_grounded?
@@ -116,7 +124,9 @@ class Player < Movable
         end
         #if we didnt click on a sphere, make one
         unless clicked_on_sphere
-          @spheres << AttractionSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GREEN)
+          if @spheres.size < @max_uses
+            @spheres << AttractionSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GREEN)
+          end
         end
       end
       if id == Gosu::MsRight

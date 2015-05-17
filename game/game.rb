@@ -8,6 +8,8 @@ require_relative 'goal_zone'
 require_relative 'power_up'
 require_relative 'trigger_object'
 require_relative 'movable_poly'
+require_relative 'block'
+require_relative 'timer'
 include Gosu
 
 class Game < Window
@@ -24,7 +26,7 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 4
+    @current_level = 0
     init_and_refresh_level
   end
 
@@ -35,9 +37,12 @@ class Game < Window
     #initialize safe deletion array
     @safe_removal_array = []
 
+    Timer.kill_all_threads
+
     load_level @current_level
     @special_draw_instructions = []
     @special_behaviors = []
+
     if DEBUG_MODE
       @debug_force_lines = []
     end
@@ -65,7 +70,7 @@ class Game < Window
     end
 
     @space.add_collision_func :player, :attractor_power do |player_shape, powerup_shape|
-      @player.activate_powerup :attractor_power
+      @player.activate_powerup :attractor_power, powerup_shape.object.max_uses
       safe_remove(powerup_shape.object)
       false
     end
@@ -74,6 +79,18 @@ class Game < Window
     #special behaviors is in object[0], special draw instructions are in object[1]
     #nil if no instruction
     @space.add_collision_func :player, :trigger do |player_shape, trigger_shape|
+      if trigger_shape.object[0] != nil
+        @special_behaviors << trigger_shape.object[0]
+        end
+      if trigger_shape.object[1] != nil
+        @special_draw_instructions << trigger_shape.object[1]
+      end
+      @special_draw_instructions
+      safe_remove(trigger_shape.object[2])
+      false
+    end
+    #trugger collision for movable blocks (flip switches with blocks)
+    @space.add_collision_func :block, :trigger do |block_shape, trigger_shape|
       if trigger_shape.object[0] != nil
         @special_behaviors << trigger_shape.object[0]
         end
@@ -116,8 +133,8 @@ class Game < Window
       points << [10,3]
       @game_objects += construct_connected_walls(points)
       points = []
-      points << [-15,0.25]
-      points << [15,0.25]
+      points << [-100,0.25]
+      points << [100,0.25]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 600, 400)
       @player = Player.new(self, @space, 40, 100)
@@ -182,7 +199,7 @@ class Game < Window
       points << [15,0.25]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 750, 250)
-      trigger_follow = PowerUp.new(self, @space, 130, 350, :attractor_power, 0xFF66FF33)
+      trigger_follow = PowerUp.new(self, @space, 130, 350, :attractor_power, 0xFF66FF33, 1)
       @game_objects << trigger_follow
 
       #define lambdas (0 = non-draw behaviors, 1 = draw behaviors)
@@ -226,12 +243,74 @@ class Game < Window
       points << [15,0.25]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 750, 500)
-      @game_objects << PowerUp.new(self, @space, 130, 350, :attractor_power, 0xFF66FF33)
+      @game_objects << PowerUp.new(self, @space, 130, 350, :attractor_power, 0xFF66FF33, 1)
       @player = Player.new(self, @space, 40, 250)
       @level_name = 'Ascend'
     }
 
     #level 5
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      (0..10).each do
+        |n|
+        points << [n * 0.7, 8 - n * 0.7 + 0.7]
+        points << [n * 0.7, 8 - n * 0.7]
+      end
+      points << [11 * 0.7, 8 - 11 * 0.7 + 0.7]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [7.5,8]
+      points << [10,8]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [7,9.5]
+      points << [7,2.5]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [-15,0.25]
+      points << [15,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 750, 500)
+      @game_objects << PowerUp.new(self, @space, 130, 450, :attractor_power, 0xFF66FF33)
+      @player = Player.new(self, @space, 40, 500)
+      @level_name = 'Tricky 1'
+    }
+
+    #level 6
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      points << [0,1]
+      points << [0.5,1]
+      points << [0.5,1.25]
+      points << [0.8,1.25]
+      points << [0.8,1]
+      points << [1.2,1]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [5,7]
+      points << [5,8.3]
+      points << [5.3,8.3]
+      points << [5,8.3]
+      points << [5,7]
+      points << [6.5,7]
+      points << [6.5,8.3]
+      points << [6.2,8.3]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [-15,0.25]
+      points << [15,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 450, 500)
+      @game_objects << PowerUp.new(self, @space, 50, 350, :attractor_power, 0xFF66FF33)
+      @player = Player.new(self, @space, 20, 250)
+      @level_name = 'In the Bucket'
+    }
+
+    #level 7
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -266,7 +345,13 @@ class Game < Window
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 750, 500)
       @game_objects << PowerUp.new(self, @space, 130, 550, :attractor_power, 0xFF66FF33)
-      @game_objects << MovablePoly.new(self, @space, 650, 650, 150, 50, 100)
+      # @game_objects << Block.new(self, @space, 650, 350, 15, 50, 100)
+      #special behaviors: generate lots of blcoks, have to pile them up!
+      Timer.call_repeating(lambda{
+                             @special_behaviors = []
+                             @special_behaviors << lambda {
+                              @game_objects << MovablePoly.new(self, @space, 650, 350, 20, 15, 500) }},
+                           1, 100)
       @player = Player.new(self, @space, 40, 550)
       @level_name = 'Pull'
     }
