@@ -14,9 +14,9 @@ class AttractionSphere
     @particles = Drawable::AttractorParticleSystem.new window
   end
 
-  def amplify
-    @attraction_strength += 100
-    @radius += 3
+  def amplify amount
+    @attraction_strength += 33 * amount
+    @radius += amount
   end
 
   def attract

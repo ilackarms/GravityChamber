@@ -17,6 +17,7 @@ class Player < Movable
   RIGHT = CP::Vec2.new(1, 0)
   ZERO_VEC = CP::Vec2.new(0, 0)
   SIZE = 10
+  MAX_HORIZONTAL_SPEED = ACCELERATION * 1.1
 
   attr_accessor :is_grounded
 
@@ -70,11 +71,28 @@ class Player < Movable
   def handle_input
     if @window.button_down? Gosu::KbA or @window.button_down? Gosu::GpLeft or @window.button_down? Gosu::KbLeft then
       # @shape.body.apply_force(LEFT * ACCELERATION, ZERO_VEC)
-      @shape.body.v = CP::Vec2.new(-1 * ACCELERATION, @shape.body.v.y)
+      # @shape.body.v = CP::Vec2.new(-1 * ACCELERATION, @shape.body.v.y)
+      if @shape.body.v.x > MAX_HORIZONTAL_SPEED * -1
+        @shape.body.apply_impulse CP::Vec2.new(JUMP_SPEED * -0.01, 0), ZERO_VEC
+      end
     end
     if @window.button_down? Gosu::KbD or @window.button_down? Gosu::GpRight or @window.button_down? Gosu::KbRight then
       # @shape.body.apply_force(RIGHT * ACCELERATION, ZERO_VEC)
-      @shape.body.v = CP::Vec2.new(ACCELERATION, @shape.body.v.y)
+      # @shape.body.v = CP::Vec2.new(ACCELERATION, @shape.body.v.y)
+      if @shape.body.v.x < MAX_HORIZONTAL_SPEED
+        @shape.body.apply_impulse CP::Vec2.new(JUMP_SPEED * 0.01, 0), ZERO_VEC
+      end
+    end
+    if @active_power == :attractor_power
+      if @window.button_down? Gosu::MsLeft
+        #if we click on a sphere we already have, make it bigger insetad of adding more
+        @spheres.each do
+        |sphere|
+          if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
+            sphere.amplify 0.01
+          end
+        end
+      end
     end
   end
 
@@ -93,7 +111,6 @@ class Player < Movable
         @spheres.each do
         |sphere|
           if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
-            sphere.amplify
             clicked_on_sphere = true
           end
         end

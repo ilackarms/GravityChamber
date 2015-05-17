@@ -7,6 +7,7 @@ require_relative 'kill_zone'
 require_relative 'goal_zone'
 require_relative 'power_up'
 require_relative 'trigger_object'
+require_relative 'movable_poly'
 include Gosu
 
 class Game < Window
@@ -23,7 +24,7 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 3
+    @current_level = 4
     init_and_refresh_level
   end
 
@@ -212,22 +213,62 @@ class Game < Window
       points << [6,2]
       @game_objects += construct_connected_walls(points)
       points = []
-      points << [7,4]
-      points << [9,4]
-      points << [9,5.3]
-      points << [9.3,5.3]
-      points << [9,5.3]
-      points << [9,4]
-      points << [10,4]
+      points << [6,7]
+      points << [9,7]
+      points << [9,8.3]
+      points << [9.3,8.3]
+      points << [9,8.3]
+      points << [9,7]
+      points << [10,7]
       @game_objects += construct_connected_walls(points)
       points = []
       points << [-15,0.25]
       points << [15,0.25]
       @game_objects += construct_connected_kill_zones(points)
-      @game_objects << GoalZone.new(self, @space, 750, 250)
+      @game_objects << GoalZone.new(self, @space, 750, 500)
       @game_objects << PowerUp.new(self, @space, 130, 350, :attractor_power, 0xFF66FF33)
       @player = Player.new(self, @space, 40, 250)
-      @level_name = 'Float'
+      @level_name = 'Ascend'
+    }
+
+    #level 5
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      points << [0,8]
+      points << [1,8]
+      points << [1,8.25]
+      points << [1.8,8.25]
+      points << [2.2,8]
+      points << [2.75,8]
+      @game_objects += construct_connected_walls(points)
+      # points = []
+      # points << [4.25,6]
+      # points << [4.35,6]
+      # @game_objects += construct_connected_walls(points)
+      # points = []
+      # points << [6.25,6]
+      # points << [6.35,6]
+      # @game_objects += construct_connected_walls(points)
+      points = []
+      points << [9,8.3]
+      points << [9.3,8.3]
+      points << [8,8.3]
+      points << [9.3,8.3]
+      points <<  [9,8.3]
+      points << [9,7]
+      points << [10,7]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [-15,0.25]
+      points << [15,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 750, 500)
+      @game_objects << PowerUp.new(self, @space, 130, 550, :attractor_power, 0xFF66FF33)
+      @game_objects << MovablePoly.new(self, @space, 650, 650, 150, 50, 100)
+      @player = Player.new(self, @space, 40, 550)
+      @level_name = 'Pull'
     }
 
     level_array
@@ -286,13 +327,8 @@ class Game < Window
     end
   end
 
-  def more_blocks
-    @blocks << Block.new(self, @space, X_RES/2.0 + (rand(100)/100.0), Y_RES - 400)
-  end
-
   def button_down(id)
     if id == Button::KbEscape then close end
-    if id == Button::KbSpace then more_blocks end
     if id == Button::KbF1 then
       init_and_refresh_level
     end
