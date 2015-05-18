@@ -26,7 +26,7 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 6
+    @current_level = 0
     init_and_refresh_level
   end
 
@@ -39,9 +39,9 @@ class Game < Window
 
     Timer.kill_all_threads
 
-    load_level @current_level
     @special_draw_instructions = []
     @special_behaviors = []
+    load_level @current_level
 
     if DEBUG_MODE
       @debug_force_lines = []
@@ -120,6 +120,31 @@ class Game < Window
 
   def define_levels
     level_array = []
+
+    #level 0
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      points << [0,1]
+      points << [10,1]
+      @game_objects += construct_connected_walls(points)
+      points = []
+      points << [-100,0.25]
+      points << [100,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 600, 400)
+      @player = Player.new(self, @space, 40, 100)
+      @special_behaviors = []
+      @special_behaviors << lambda {
+        @text = Gosu::Font.new(self, "Courier", 36)
+      }
+      @special_draw_instructions = []
+      @special_draw_instructions << lambda {
+        @text.draw("THE ELUSIVE MR. WIMBLY", X_RES/2 - 250, 50, 0, 1, 1, Gosu::Color::WHITE)
+      }
+      @level_name = 'Title'
+    }
 
     #level 1
     level_array << lambda {
