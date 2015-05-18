@@ -7,7 +7,7 @@ include DynamicShape
 include Gosu
 
 class GoalZone < Movable
-  MASS = 1000
+  MASS = 1500
   ZERO_VEC = CP::Vec2.new(0, 0)
   SIZE = 15
 

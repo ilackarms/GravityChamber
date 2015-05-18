@@ -86,7 +86,7 @@ module Drawable
       @particles = []
     end
 
-    def draw_special x, y, radius, color
+    def draw_special x, y, radius, color, collision_type
       start_points = []
       @points.each do
       |point|
@@ -105,7 +105,12 @@ module Drawable
 
       if @particles.size < 6
         index = rand(0..start_points.size-1)
-        @particles << ShootingParticle.new(@window, start_points[index], CP::Vec2.new(x,y), color)
+        if collision_type == :attractor_power
+          @particles << ShootingParticle.new(@window, start_points[index], CP::Vec2.new(x,y), color)
+        end
+        if collision_type == :repulsion_power
+          @particles << ShootingParticle.new(@window, CP::Vec2.new(x,y), start_points[index], color)
+        end
       end
 
       @particles.each do

@@ -20,14 +20,10 @@ class PowerUp < Movable
     create_dynamic_poly(x, y, MASS, powerup_type)
     @max_uses = max_uses
     @shape.object = self
-    @base_color = color
+    @color = color
   end
 
   def draw
-    @color += 0x00000005
-    if @color < @base_color or @color >@base_color + 0x00000033
-      @color = @base_color
-    end
     draw_polygon
   end
 

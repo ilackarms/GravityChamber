@@ -3,7 +3,7 @@ require "enumerator"
 require 'gosu'
 require_relative 'drawables'
 require_relative 'dynamic_shape'
-require_relative 'attraction_sphere'
+require_relative 'power_sphere'
 
 include DynamicShape
 include Gosu
@@ -38,7 +38,19 @@ class Player < Movable
     draw_polygon
     if @active_power == :attractor_power
       @cursor_sphere.draw @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
-      @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
+      @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY, :attractor_power
+      @spheres.each do |sphere| sphere.draw end
+      if @spheres.size == @max_uses
+        @power_use_text.draw(@spheres.size.to_s + " / " + @max_uses.to_s, 25, 25, 0, 1, 1, Gosu::Color::GREEN)
+      else
+        @power_use_text.draw(@spheres.size.to_s + " / ", 25, 25, 0, 1, 1, Gosu::Color::GRAY)
+        @power_use_text.draw(@max_uses.to_s, 75, 25, 0, 1, 1, Gosu::Color::GREEN)
+      end
+    end
+
+    if @active_power == :repulsion_power
+      @cursor_sphere.draw @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
+      @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY, :repulsion_power
       @spheres.each do |sphere| sphere.draw end
       if @spheres.size == @max_uses
         @power_use_text.draw(@spheres.size.to_s + " / " + @max_uses.to_s, 25, 25, 0, 1, 1, Gosu::Color::GREEN)
@@ -61,7 +73,7 @@ class Player < Movable
     @is_grounded -= 1
     @spheres.each do
       |sphere|
-      sphere.attract
+      sphere.attract_repel
     end
     handle_input
   end
@@ -91,13 +103,13 @@ class Player < Movable
         @shape.body.apply_impulse CP::Vec2.new(JUMP_SPEED * 0.01, 0), ZERO_VEC
       end
     end
-    if @active_power == :attractor_power
+    if @active_power != nil
       if @window.button_down? Gosu::MsLeft
         #if we click on a sphere we already have, make it bigger insetad of adding more
         @spheres.each do
         |sphere|
           if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
-            sphere.amplify 0.01
+            sphere.amplify 0.015
           end
         end
       end
@@ -112,7 +124,7 @@ class Player < Movable
           @is_grounded = 0
         end
     end
-    if @active_power == :attractor_power
+    if @active_power != nil
       if id == Gosu::MsLeft
         #if we click on a sphere we already have, make it bigger insetad of adding more
         clicked_on_sphere = false
@@ -125,7 +137,7 @@ class Player < Movable
         #if we didnt click on a sphere, make one
         unless clicked_on_sphere
           if @spheres.size < @max_uses
-            @spheres << AttractionSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GREEN)
+            @spheres << PowerSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, @active_power)
           end
         end
       end
