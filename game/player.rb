@@ -151,4 +151,5 @@ class Player < Movable
       end
     end
   end
+
 end

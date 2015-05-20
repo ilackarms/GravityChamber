@@ -26,7 +26,8 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 0
+    @current_level = 11
+    @time_text = Gosu::Font.new(self, "Courier", 16)
     init_and_refresh_level
   end
 
@@ -128,7 +129,7 @@ class Game < Window
       points = []
       points << [0,1]
       points << [10,1]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [-100,0.25]
       points << [100,0.25]
@@ -157,11 +158,11 @@ class Game < Window
       points << [5,1.5]
       points << [5,3]
       points << [6,3]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [6.65,3]
       points << [10,3]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [-100,0.25]
       points << [100,0.25]
@@ -181,22 +182,22 @@ class Game < Window
       points << [2,2]
       points << [3.6,2]
       points << [3.6,5]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [3,4.5]
       points << [3,9]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [3.7,8]
       points << [7,8]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [8,8]
       points << [10,8]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
-      points << [-15,0.25]
-      points << [15,0.25]
+      points << [-100,0.25]
+      points << [100,0.25]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 700, 600)
       @player = Player.new(self, @space, 40, 100)
@@ -214,7 +215,7 @@ class Game < Window
       points << [2.1,4.25]
       points << [2.1,4]
       points << [3.1,4]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [7,4]
       points << [9,4]
@@ -223,10 +224,10 @@ class Game < Window
       points << [9,5.3]
       points << [9,4]
       points << [10,4]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
-      points << [-15,0.25]
-      points << [15,0.25]
+      points << [-100,0.25]
+      points << [100,0.25]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 750, 250)
       trigger_follow = PowerUp.new(self, @space, 130, 350, :attractor_power, 0xFF66FF33, 1)
@@ -258,7 +259,7 @@ class Game < Window
       points << [2.1,2.25]
       points << [2.1,2]
       points << [6,2]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [6,7]
       points << [9,7]
@@ -267,10 +268,10 @@ class Game < Window
       points << [9,8.3]
       points << [9,7]
       points << [10,7]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
-      points << [-15,0.25]
-      points << [15,0.25]
+      points << [-100,0.25]
+      points << [100,0.25]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 750, 500)
       @game_objects << PowerUp.new(self, @space, 130, 350, :attractor_power, 0xFF66FF33, 1)
@@ -289,18 +290,18 @@ class Game < Window
         points << [n * 0.7, 8 - n * 0.7]
       end
       points << [11 * 0.7, 8 - 11 * 0.7 + 0.7]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [7.5,8]
       points << [10,8]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [7,9.5]
       points << [7,2.5]
       @game_objects += construct_connected_kill_zones(points)
       points = []
-      points << [-15,0.25]
-      points << [15,0.25]
+      points << [-100,0.25]
+      points << [100,0.25]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 750, 500)
       @game_objects << PowerUp.new(self, @space, 130, 450, :attractor_power, 0xFF66FF33, 2)
@@ -319,7 +320,7 @@ class Game < Window
       points << [0.8,1.25]
       points << [0.8,1]
       points << [1.2,1]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [5,7]
       points << [5,8.3]
@@ -329,10 +330,10 @@ class Game < Window
       points << [6.5,7]
       points << [6.5,8.3]
       points << [6.2,8.3]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
-      points << [-15,0.25]
-      points << [15,0.25]
+      points << [-100,0.25]
+      points << [100,0.25]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 450, 500)
       @game_objects << PowerUp.new(self, @space, 50, 350, :attractor_power, 0xFF66FF33, 2)
@@ -345,25 +346,25 @@ class Game < Window
       @blocks = []
       @game_objects = []
       points = []
-      points << [0,9]
-      points << [2.5,9]
-      @game_objects += construct_connected_walls(points)
+      points << [0,4]
+      points << [2.5,4]
+      @game_objects += construct_walls(points)
       points = []
-      points << [7.5,9]
-      points << [10,9]
-      @game_objects += construct_connected_walls(points)
+      points << [7.5,4]
+      points << [10,4]
+      @game_objects += construct_walls(points)
       points = []
-      points << [-15,9.95]
-      points << [15,9.95]
+      points << [-100,6.75]
+      points << [100,6.75]
       @game_objects += construct_connected_kill_zones(points)
       points = []
-      points << [-15,0.25]
-      points << [15,0.25]
+      points << [-100,2.25]
+      points << [100,2.25]
       @game_objects += construct_connected_kill_zones(points)
-      @game_objects << GoalZone.new(self, @space, 700, 550)
-      @game_objects << PowerUp.new(self, @space, 150, 550, :attractor_power, 0xFF66FF33, 1)
-      @player = Player.new(self, @space, 20, 550)
-      @level_name = 'U'
+      @game_objects << GoalZone.new(self, @space, 700, 300)
+      @game_objects << PowerUp.new(self, @space, 150, 300, :repulsion_power, 0xFFC680FF, 1)
+      @player = Player.new(self, @space, 20, 300)
+      @level_name = 'Push'
     }
 
     #level 8
@@ -371,24 +372,59 @@ class Game < Window
       @blocks = []
       @game_objects = []
       points = []
+      points << [0,5]
+      points << [2.5,5]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [7.5,5]
+      points << [10,5]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [-100,9.95]
+      points << [5,9.95]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [-100,0.25]
+      points << [100,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [5,9.95]
+      points << [5,3]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 700, 550)
+      @game_objects << PowerUp.new(self, @space, 150, 550, :repulsion_power, 0xFF66FF33, 1)
+      @player = Player.new(self, @space, 20, 550)
+      @level_name = 'V'
+    }
+
+    #level 9
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
       points << [0,9]
       points << [2.5,9]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
       points << [7.5,9]
       points << [10,9]
-      @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
-      points << [-15,8.25]
-      points << [15,8.25]
+      points << [-100,9.95]
+      points << [100,9.95]
       @game_objects += construct_connected_kill_zones(points)
-      @game_objects << GoalZone.new(self, @space, 700, 600)
-      @game_objects << PowerUp.new(self, @space, 150, 600, :repulsion_power, 0xFFC680FF, 1)
-      @player = Player.new(self, @space, 20, 600)
-      @level_name = 'Push'
+      points = []
+      points << [-100,0.25]
+      points << [100,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 700, 550)
+      @game_objects << PowerUp.new(self, @space, 150, 550, :attractor_power, 0xFF66FF33, 1)
+      @player = Player.new(self, @space, 20, 550)
+      @level_name = 'U'
     }
 
-    #level XX
+
+    #level 10
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -399,39 +435,53 @@ class Game < Window
       points << [1.8,8.25]
       points << [2.2,8]
       points << [2.75,8]
-      @game_objects += construct_connected_walls(points)
-      # points = []
-      # points << [4.25,6]
-      # points << [4.35,6]
-      # @game_objects += construct_connected_walls(points)
-      # points = []
-      # points << [6.25,6]
-      # points << [6.35,6]
-      # @game_objects += construct_connected_walls(points)
+      @game_objects += construct_walls(points)
       points = []
-      points << [9,8.3]
-      points << [9.3,8.3]
-      points << [8,8.3]
-      points << [9.3,8.3]
-      points <<  [9,8.3]
-      points << [9,7]
-      points << [10,7]
-      @game_objects += construct_connected_walls(points)
-      points = []
-      points << [-15,0.25]
-      points << [15,0.25]
+      points << [-100,0.25]
+      points << [100,0.25]
       @game_objects += construct_connected_kill_zones(points)
-      @game_objects << GoalZone.new(self, @space, 750, 500)
-      @game_objects << PowerUp.new(self, @space, 130, 550, :attractor_power, 0xFF66FF33)
+      @game_objects << GoalZone.new(self, @space, 450, 350)
+      @game_objects << PowerUp.new(self, @space, 130, 550, :attractor_power, 0xFF66FF33, 1)
       # @game_objects << Block.new(self, @space, 650, 350, 15, 50, 100)
       #special behaviors: generate lots of blcoks, have to pile them up!
       Timer.call_repeating(lambda{
                              @special_behaviors = []
                              @special_behaviors << lambda {
-                              @game_objects << MovablePoly.new(self, @space, 650, 350, 20, 15, 500) }},
-                           1, 100)
+                              @game_objects << MovablePoly.new(self, @space, 450, 350, 20, 15, 400) }},
+                           0.5, 50)
       @player = Player.new(self, @space, 40, 550)
       @level_name = 'Pull'
+    }
+
+
+    #level 11
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      points << [0.01,12]
+      points << [0.01,9]
+      points << [2.5,9]
+      points << [2.5,2]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [0.1,3]
+      points << [0.1,1]
+      points << [0.5,1]
+      points << [0.5,2]
+      points << [0.4,2]
+      points << [0.5,2]
+      points << [0.5,1]
+      points << [2,1]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [-100,0.25]
+      points << [100,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 20, 150)
+      @game_objects << PowerUp.new(self, @space, 150, 550, :attractor_power, 0xFF66FF33, 3)
+      @player = Player.new(self, @space, 20, 550)
+      @level_name = 'G'
     }
 
     level_array
@@ -476,6 +526,8 @@ class Game < Window
     @blocks.each{|block| block.draw}
     @game_objects.each{|wall| wall.draw}
     @player.draw
+    elapsed_time = (Gosu.milliseconds / 1000.0)
+    @time_text.draw('time: '+ "%.1f" % elapsed_time, X_RES - 150, 25, 0, 1, 1, Gosu::Color::GRAY)
     @special_draw_instructions.each do
       |instruction|
       instruction.call
@@ -498,7 +550,7 @@ class Game < Window
     @player.handle_button_down id
   end
 
-  def construct_connected_walls points
+  def construct_walls points
     wall_list = []
     points.each_with_index  do
       |point, index|
@@ -509,6 +561,24 @@ class Game < Window
       p2 = points[index + 1]
       x_unit = X_RES / 10
       y_unit = Y_RES / 10
+      wall_list << Wall.new(self, @space, CP::Vec2.new(x_unit * p1[0],y_unit * p1[1]), CP::Vec2.new(x_unit * p2[0],y_unit * p2[1]))
+    end
+    wall_list
+  end
+
+  def construct_frictionless_wall points
+    wall_list = []
+    points.each_with_index  do
+      |point, index|
+      if index == points.size - 1
+        break
+      end
+      p1 = point
+      p2 = points[index + 1]
+      x_unit = X_RES / 10
+      y_unit = Y_RES / 10
+      wall = Wall.new(self, @space, CP::Vec2.new(x_unit * p1[0],y_unit * p1[1]), CP::Vec2.new(x_unit * p2[0],y_unit * p2[1]))
+      wall.shape.u = 0
       wall_list << Wall.new(self, @space, CP::Vec2.new(x_unit * p1[0],y_unit * p1[1]), CP::Vec2.new(x_unit * p2[0],y_unit * p2[1]))
     end
     wall_list
