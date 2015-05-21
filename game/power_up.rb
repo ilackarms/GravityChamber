@@ -23,8 +23,8 @@ class PowerUp < Movable
     @color = color
   end
 
-  def draw
-    draw_polygon
+  def draw offset_x = 0, offset_y = 0
+    draw_polygon offset_x, offset_y
   end
 
   def fric

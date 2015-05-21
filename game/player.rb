@@ -19,7 +19,7 @@ class Player < Movable
   SIZE = 10
   MAX_HORIZONTAL_SPEED = ACCELERATION * 1.1
 
-  attr_accessor :is_grounded
+  attr_accessor :is_grounded, :is_alive
 
   def initialize(window, space, x, y)
     @window = window
@@ -30,28 +30,21 @@ class Player < Movable
     @shape.object = self
     @is_grounded = 4
     @cursor_sphere = Drawable::Circle.new @window
-    @cursor_particles = Drawable::AttractorParticleSystem.new @window
+    @cursor_particles = Drawable::ParticleSystem.new @window
     @spheres = []
+    @is_alive = true
   end
 
-  def draw
-    draw_polygon
-    if @active_power == :attractor_power
-      @cursor_sphere.draw @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
-      @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY, :attractor_power
-      @spheres.each do |sphere| sphere.draw end
-      if @spheres.size == @max_uses
-        @power_use_text.draw(@spheres.size.to_s + " / " + @max_uses.to_s, 25, 25, 0, 1, 1, Gosu::Color::GREEN)
-      else
-        @power_use_text.draw(@spheres.size.to_s + " / ", 25, 25, 0, 1, 1, Gosu::Color::GRAY)
-        @power_use_text.draw(@max_uses.to_s, 75, 25, 0, 1, 1, Gosu::Color::GREEN)
-      end
+  def draw offset_x = 0, offset_y = 0
+    if is_alive
+      draw_polygon offset_x, offset_y
+    else
+      @death_animation.draw_special @shape.body.p.x, @window.height - @shape.body.p.y, 10, @color, :repulsion_power, offset_x, offset_y, 9
     end
-
-    if @active_power == :repulsion_power
+    if @active_power != nil
       @cursor_sphere.draw @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY
-      @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY, :repulsion_power
-      @spheres.each do |sphere| sphere.draw end
+      @cursor_particles.draw_special @window.mouse_x, @window.mouse_y, 10, Gosu::Color::GRAY, @active_power
+      @spheres.each do |sphere| sphere.draw offset_x, offset_y end
       if @spheres.size == @max_uses
         @power_use_text.draw(@spheres.size.to_s + " / " + @max_uses.to_s, 25, 25, 0, 1, 1, Gosu::Color::GREEN)
       else
@@ -84,32 +77,44 @@ class Player < Movable
     @power_use_text = Gosu::Font.new(@window, 'Courier', 24)
   end
 
+  def create_sphere power_type
+    @spheres << PowerSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, power_type)
+  end
+
+  def kill
+    @is_alive = false
+    @shape.collision_type = :dead
+    @death_animation = Drawable::ParticleSystem.new @window
+  end
+
   def is_grounded?
     @is_grounded > 0
   end
 
   def handle_input
-    if @window.button_down? Gosu::KbA or @window.button_down? Gosu::GpLeft or @window.button_down? Gosu::KbLeft then
-      # @shape.body.apply_force(LEFT * ACCELERATION, ZERO_VEC)
-      # @shape.body.v = CP::Vec2.new(-1 * ACCELERATION, @shape.body.v.y)
-      if @shape.body.v.x > MAX_HORIZONTAL_SPEED * -1
-        @shape.body.apply_impulse CP::Vec2.new(JUMP_SPEED * -0.01, 0), ZERO_VEC
+    if is_alive
+      if @window.button_down? Gosu::KbA or @window.button_down? Gosu::GpLeft or @window.button_down? Gosu::KbLeft then
+        # @shape.body.apply_force(LEFT * ACCELERATION, ZERO_VEC)
+        # @shape.body.v = CP::Vec2.new(-1 * ACCELERATION, @shape.body.v.y)
+        if @shape.body.v.x > MAX_HORIZONTAL_SPEED * -1
+          @shape.body.apply_impulse CP::Vec2.new(JUMP_SPEED * -0.01, 0), ZERO_VEC
+        end
       end
-    end
-    if @window.button_down? Gosu::KbD or @window.button_down? Gosu::GpRight or @window.button_down? Gosu::KbRight then
-      # @shape.body.apply_force(RIGHT * ACCELERATION, ZERO_VEC)
-      # @shape.body.v = CP::Vec2.new(ACCELERATION, @shape.body.v.y)
-      if @shape.body.v.x < MAX_HORIZONTAL_SPEED
-        @shape.body.apply_impulse CP::Vec2.new(JUMP_SPEED * 0.01, 0), ZERO_VEC
+      if @window.button_down? Gosu::KbD or @window.button_down? Gosu::GpRight or @window.button_down? Gosu::KbRight then
+        # @shape.body.apply_force(RIGHT * ACCELERATION, ZERO_VEC)
+        # @shape.body.v = CP::Vec2.new(ACCELERATION, @shape.body.v.y)
+        if @shape.body.v.x < MAX_HORIZONTAL_SPEED
+          @shape.body.apply_impulse CP::Vec2.new(JUMP_SPEED * 0.01, 0), ZERO_VEC
+        end
       end
-    end
-    if @active_power != nil
-      if @window.button_down? Gosu::MsLeft
-        #if we click on a sphere we already have, make it bigger insetad of adding more
-        @spheres.each do
-        |sphere|
-          if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
-            sphere.amplify 0.015
+      if @active_power != nil
+        if @window.button_down? Gosu::MsLeft
+          #if we click on a sphere we already have, make it bigger insetad of adding more
+          @spheres.each do
+          |sphere|
+            if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
+              sphere.amplify 0.015
+            end
           end
         end
       end
@@ -117,35 +122,37 @@ class Player < Movable
   end
 
   def handle_button_down id
-    if id == Button::KbW or id == Button::KbUp
-        if is_grounded?
-          # @shape.body.v = @shape.body.v + CP::Vec2.new(0, JUMP_SPEED)
-          @shape.body.apply_impulse CP::Vec2.new(0, JUMP_SPEED * 3), ZERO_VEC
-          @is_grounded = 0
-        end
-    end
-    if @active_power != nil
-      if id == Gosu::MsLeft
-        #if we click on a sphere we already have, make it bigger insetad of adding more
-        clicked_on_sphere = false
-        @spheres.each do
-        |sphere|
-          if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
-            clicked_on_sphere = true
+    if is_alive
+      if id == Button::KbW or id == Button::KbUp
+          if is_grounded?
+            # @shape.body.v = @shape.body.v + CP::Vec2.new(0, JUMP_SPEED)
+            @shape.body.apply_impulse CP::Vec2.new(0, JUMP_SPEED * 3), ZERO_VEC
+            @is_grounded = 0
           end
-        end
-        #if we didnt click on a sphere, make one
-        unless clicked_on_sphere
-          if @spheres.size < @max_uses
-            @spheres << PowerSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, @active_power)
-          end
-        end
       end
-      if id == Gosu::MsRight
-        @spheres.each do
+      if @active_power != nil
+        if id == Gosu::MsLeft
+          #if we click on a sphere we already have, make it bigger insetad of adding more
+          clicked_on_sphere = false
+          @spheres.each do
           |sphere|
-          if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
-            @spheres.delete(sphere)
+            if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
+              clicked_on_sphere = true
+            end
+          end
+          #if we didnt click on a sphere, make one
+          unless clicked_on_sphere
+            if @spheres.size < @max_uses
+              create_sphere @active_power
+            end
+          end
+        end
+        if id == Gosu::MsRight
+          @spheres.each do
+            |sphere|
+            if sphere.p.dist(CP::Vec2.new(@window.mouse_x, @window.mouse_y)) < sphere.radius * 1.1
+              @spheres.delete(sphere)
+            end
           end
         end
       end

@@ -11,8 +11,8 @@ class KillZone
     create_static_line(v1, v2, :kill_zone, 0xFFFF0000)
   end
 
-  def draw
-    draw_wall
+  def draw offset_x = 0, offset_y = 0
+    draw_wall offset_x, offset_y
   end
 
   def fric

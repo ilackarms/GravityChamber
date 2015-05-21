@@ -21,10 +21,10 @@ class GoalZone < Movable
     @color = 0xFF0066FF
   end
 
-  def draw
+  def draw(offset_x = 0, offset_y = 0)
     @color += 0x00000001
     @color = @color % (0xFFFFFFFF - 0xFF0066FF) + 0xFF0066FF
-    draw_polygon
+    draw_polygon offset_x, offset_y
   end
 
   def fric

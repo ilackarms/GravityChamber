@@ -28,7 +28,7 @@ class TriggerObject #not movable
     set_to_follow attached_obj
   end
 
-  def draw
+  def draw offset_x = 0, offset_y = 0
     #follow object behavior! TODO: should not be in draw method
     #@follow_obj must be a Movable
     if @follow_obj != nil
@@ -38,7 +38,7 @@ class TriggerObject #not movable
       @shape.body.p.y = @y
     end
     if @visible
-      draw_polygon
+      draw_polygon offset_x, offset_y
     end
   end
 

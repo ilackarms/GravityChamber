@@ -1,4 +1,5 @@
 require 'chipmunk'
+require 'gosu'
 require_relative 'drawables'
 
 class PowerSphere
@@ -16,8 +17,9 @@ class PowerSphere
     end
     @radius = radius
     @circle = Drawable::Circle.new window
-    @particles = Drawable::AttractorParticleSystem.new window
+    @particles = Drawable::ParticleSystem.new window
     @sphere_type = collision_type
+    @strength_font = Gosu::Font.new(@window, "Courier", 13)
   end
 
   def amplify amount
@@ -33,8 +35,9 @@ class PowerSphere
     @window.attract_all_towards_point(@world_coordinates, @attraction_strength * reverse)
   end
 
-  def draw
-    @circle.draw @p.x, @p.y, @radius, @color
-    @particles.draw_special @p.x, @p.y, @radius, @color, @sphere_type
+  def draw offset_x = 0, offset_y = 0
+    @circle.draw @p.x, @p.y, @radius, @color, offset_x, offset_y
+    @particles.draw_special @p.x, @p.y, @radius, @color, @sphere_type, offset_x, offset_y
+    @strength_font.draw("%.1f" % (@attraction_strength/100.0), @p.x - 10 + offset_x, @p.y - 10 + offset_y, 0, 1, 1, @color)
   end
 end

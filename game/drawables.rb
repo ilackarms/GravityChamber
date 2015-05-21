@@ -25,7 +25,7 @@ module Drawable
       end
     end
 
-    def draw x, y, radius, color
+    def draw x, y, radius, color, offset_x = 0, offset_y = 0
       @color = color
       points = []
       @points.each do
@@ -42,7 +42,7 @@ module Drawable
         new_p.y += y
         points << new_p
       end
-      draw_polygon points
+      draw_polygon points, offset_x, offset_y
     end
 
     def draw_polygon(points, offset_x=0, offset_y=0)
@@ -51,9 +51,9 @@ module Drawable
         b = pair[1]
         @window.draw_line(a.x+offset_x, a.y+offset_y, @color, b.x+offset_x, b.y+offset_y, @color, z=1, mode=:default)
       end
-      # a = points.last
-      # b = points.first
-      # @window.draw_line(a.x+offset_x, a.y+offset_y, @color, b.x+offset_x, b.y+offset_y, @color, z=1, mode=:default)
+      a = points.last
+      b = points.first
+      @window.draw_line(a.x+offset_x, a.y+offset_y, @color, b.x+offset_x, b.y+offset_y, @color, z=1, mode=:default)
     end
 
   end
@@ -70,23 +70,23 @@ module Drawable
       @current_stop = stop
     end
 
-    def draw
+    def draw(offset_x = 0, offset_y = 0)
       @current_start = @current_start.lerpconst(@stop, 4.5)
       @current_stop = @current_start.lerpconst(@stop, 4.5)
-      @window.draw_line(@current_start.x, @current_start.y, @color, @current_stop.x, @current_stop.y, @color)
+      @window.draw_line(@current_start.x + offset_x, @current_start.y + offset_y, @color, @current_stop.x + offset_x, @current_stop.y + offset_y, @color)
       if @current_start.dist(@stop) < 0.1
         @finished = true
       end
     end
   end
 
-  class AttractorParticleSystem < Circle
+  class ParticleSystem < Circle
     def initialize window
       super window
       @particles = []
     end
 
-    def draw_special x, y, radius, color, collision_type
+    def draw_special x, y, radius, color, collision_type, offset_x = 0, offset_y = 0, num_particles = 6
       start_points = []
       @points.each do
       |point|
@@ -103,7 +103,7 @@ module Drawable
         start_points << new_p_start
       end
 
-      if @particles.size < 6
+      if @particles.size < num_particles
         index = rand(0..start_points.size-1)
         if collision_type == :attractor_power
           @particles << ShootingParticle.new(@window, start_points[index], CP::Vec2.new(x,y), color)
@@ -118,7 +118,7 @@ module Drawable
         if particle.finished
           @particles.delete(particle)
         end
-        particle.draw
+        particle.draw offset_x, offset_y
       end
     end
   end
