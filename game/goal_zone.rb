@@ -11,13 +11,14 @@ class GoalZone < Movable
   ZERO_VEC = CP::Vec2.new(0, 0)
   SIZE = 15
 
-  attr_accessor :is_grounded
+  attr_accessor :is_grounded, :color
 
   def initialize(window, space, x, y)
     @window = window
     @space = space
     @bounds = [CP::Vec2.new(-0.5,-0.65) * SIZE, CP::Vec2.new(-0.5,0.65) * SIZE, CP::Vec2.new(0.5,0.65) * SIZE, CP::Vec2.new(0.5,-0.65) * SIZE]
     create_dynamic_poly(x, y, MASS, :goal_zone)
+    @shape.object = self
     @color = 0xFF0066FF
   end
 

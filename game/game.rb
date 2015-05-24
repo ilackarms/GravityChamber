@@ -22,15 +22,101 @@ class Game < Window
 
   DEBUG_MODE = false
 
-  attr_accessor :game_objects
-
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 8
+    @current_level = 14
     @time_text = Gosu::Font.new(self, "Courier", 16)
     init_and_refresh_level
   end
 
+  def init_and_refresh_level
+    @space = CP::Space.new
+    @space.damping = VISCOUS_DAMPING
+    @space.gravity = CP::Vec2.new(0,GRAVITY)
+    #initialize safe deletion array
+    @safe_removal_array = []
+
+    Timer.kill_all_threads
+
+    @special_draw_instructions = []
+    @special_behaviors = []
+    load_level @current_level
+
+    if DEBUG_MODE
+      @debug_force_lines = []
+    end
+
+    #set window title
+    self.caption = "The Elusive Mr. Wimbly - #{@level_name}"
+
+    #add collision functions
+    ##collision function for player and ground -> allow player to be grounded while touching wall
+    @space.add_collision_func :player, :wall do |player_shape, wall_shape|
+      player = player_shape.object
+      player.is_grounded = 500
+      true
+    end
+
+    #add collision functions
+    ##collision function for player and ground -> allow player to be grounded while touching blocks too
+    @space.add_collision_func :player, :movable_block do |player_shape, wall_shape|
+      player = player_shape.object
+      player.is_grounded = 500
+      true
+    end
+
+    @space.add_collision_func :player, :kill_zone do |player_shape, kill_zone_shape|
+      @player.kill
+      Timer.call_repeating(lambda{ @special_behaviors << lambda { init_and_refresh_level}}, 0.24, 1)
+      false
+    end
+
+    @space.add_collision_func :player, :goal_zone do |player_shape, goal_zone_shape|
+      @current_level += 1
+      @player.kill goal_zone_shape.object.color
+      Timer.call_repeating(lambda{ @special_behaviors << lambda { init_and_refresh_level}}, 0.24, 1)
+      false
+    end
+
+    @space.add_collision_func :player, :attractor_power do |player_shape, powerup_shape|
+      @player.activate_powerup :attractor_power, powerup_shape.object.max_uses
+      safe_remove(powerup_shape.object)
+      false
+    end
+
+    @space.add_collision_func :player, :repulsion_power do |player_shape, powerup_shape|
+      @player.activate_powerup :repulsion_power, powerup_shape.object.max_uses
+      safe_remove(powerup_shape.object)
+      false
+    end
+
+    #trigger collision. can be visible/invisible. trigger.object is a lambda
+    #special behaviors is in object[0], special draw instructions are in object[1]
+    #nil if no instruction
+    @space.add_collision_func :player, :trigger do |player_shape, trigger_shape|
+      if trigger_shape.object[0] != nil
+        @special_behaviors << trigger_shape.object[0]
+      end
+      if trigger_shape.object[1] != nil
+        @special_draw_instructions << trigger_shape.object[1]
+      end
+      @special_draw_instructions
+      safe_remove(trigger_shape.object[2])
+      false
+    end
+    #trugger collision for movable blocks (flip switches with blocks)
+    @space.add_collision_func :block, :trigger do |block_shape, trigger_shape|
+      if trigger_shape.object[0] != nil
+        @special_behaviors << trigger_shape.object[0]
+      end
+      if trigger_shape.object[1] != nil
+        @special_draw_instructions << trigger_shape.object[1]
+      end
+      @special_draw_instructions
+      safe_remove(trigger_shape.object[2])
+      false
+    end
+  end
 
   def define_levels
     level_array = []
@@ -386,40 +472,7 @@ class Game < Window
       @level_name = 'U'
     }
 
-
     #level 11
-    level_array << lambda {
-      @blocks = []
-      @game_objects = []
-      points = []
-      points << [0,8]
-      points << [1,8]
-      points << [1,8.25]
-      points << [1.8,8.25]
-      points << [2.2,8]
-      points << [2.75,8]
-      @game_objects += construct_walls(points)
-      points << [4,0.1]
-      points << [6,0.1]
-      @game_objects += construct_walls(points)
-      points = []
-      points << [-100,0.25]
-      points << [100,0.25]
-      @game_objects += construct_connected_kill_zones(points)
-      @game_objects << GoalZone.new(self, @space, 450, 350)
-      @game_objects << PowerUp.new(self, @space, 130, 550, :attractor_power, 0xFF66FF33, 1)
-      # @game_objects << Block.new(self, @space, 650, 350, 15, 50, 100)
-      #special behaviors: generate lots of blcoks, have to pile them up!
-      Timer.call_repeating(lambda{
-                             @special_behaviors = []
-                             @special_behaviors << lambda {
-                               @game_objects << MovablePoly.new(self, @space, 450, 350, 20, 15, 400) }},
-                           0.5, 50)
-      @player = Player.new(self, @space, 40, 550)
-      @level_name = 'Scatter'
-    }
-
-    #level 12
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -459,8 +512,7 @@ class Game < Window
       @level_name = 'Slide'
     }
 
-
-    #level 13
+    #level 12
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -488,9 +540,48 @@ class Game < Window
       points << [100,0.25]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 20, 150)
-      @game_objects << PowerUp.new(self, @space, 150, 550, :attractor_power, 0xFF66FF33, 3)
+      @game_objects << PowerUp.new(self, @space, 150, 550, :attractor_power, 0xFF66FF33, 2)
       @player = Player.new(self, @space, 20, 550)
       @level_name = 'Stacking'
+    }
+
+    #level 13
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      points << [0.01,3]
+      points << [0.01,2]
+      points << [3,2]
+      @game_objects += construct_walls(points)
+      points = []
+      # points << [6.5,3]
+      # points << [7.5,2.5]
+      # points << [7.75,3.5]
+      # points << [7.5,2.5]
+      # points << [8.5,2]
+      points << [6.5,2]
+      points << [8,2]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [6.58,4.5]
+      points << [6.5,3.75]
+      points << [6.5,2]
+      # points << [6.5,3]
+      # points << [5,5]
+      @game_objects += construct_frictionless_wall(points)
+      points = []
+      points << [-100,0.25]
+      points << [100,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [6.58,4.5]
+      points << [8,4.5]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 540, 200)
+      @game_objects << PowerUp.new(self, @space, 150, 150, :attractor_power, 0xFF66FF33, 3)
+      @player = Player.new(self, @space, 20, 150)
+      @level_name = 'Stacking 2'
     }
 
     #level 14
@@ -498,156 +589,59 @@ class Game < Window
       @blocks = []
       @game_objects = []
       points = []
-      points << [0.01,12]
-      points << [0.01,9]
-      points << [2.5,9]
+      points << [0,5]
+      points << [0.4,5]
+      points << [0.4,5.2]
+      points << [0.4,5]
+      points << [1.25,5]
       @game_objects += construct_walls(points)
       points = []
-      points << [2.5,9]
-      points << [2.5,2]
-      frictionless_wall = construct_frictionless_wall(points)
-      @game_objects += frictionless_wall
-      points = []
-      points << [0.1,3]
-      points << [0.1,1]
-      points << [0.5,1]
-      points << [0.5,2]
-      points << [0.4,2]
-      points << [0.5,2]
-      points << [0.5,1]
-      points << [2,1]
+      points << [8,4.5]
+      points << [10,4.5]
       @game_objects += construct_walls(points)
       points = []
-      points << [-100,0.25]
-      points << [100,0.25]
+      points << [-100,4.25]
+      points << [100,4.25]
       @game_objects += construct_connected_kill_zones(points)
-      @game_objects << GoalZone.new(self, @space, 20, 150)
-      @game_objects << PowerUp.new(self, @space, 150, 550, :attractor_power, 0xFF66FF33, 3)
-      @player = Player.new(self, @space, 20, 550)
-      @level_name = 'LEVEL WHERE THE WELLS ALREADY EXIST AND U HAVE TO REMOVE THEM'
+      points = []
+      points << [-100,7.25]
+      points << [100,7.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 740, 350)
+      @game_objects << PowerUp.new(self, @space, 75, 350, :repulsion_power, 0xFFC680FF, 2)
+      @player = Player.new(self, @space, 20, 350)
+      @level_name = 'Railgun'
     }
 
-    #level 15
+    #level XX
     level_array << lambda {
       @blocks = []
       @game_objects = []
       points = []
-      points << [0.01,12]
-      points << [0.01,9]
-      points << [2.5,9]
+      points << [0,1.5]
+      points << [3,1.5]
       @game_objects += construct_walls(points)
       points = []
-      points << [2.5,9]
-      points << [2.5,2]
-      @game_objects += construct_frictionless_wall(points)
-      points = []
-      points << [0.1,3]
-      points << [0.1,1]
-      points << [0.5,1]
-      points << [0.5,2]
-      points << [0.4,2]
-      points << [0.5,2]
-      points << [0.5,1]
-      points << [2,1]
+      points << [4,0.1]
+      points << [6,0.1]
       @game_objects += construct_walls(points)
       points = []
       points << [-100,0.25]
       points << [100,0.25]
       @game_objects += construct_connected_kill_zones(points)
-      @game_objects << GoalZone.new(self, @space, 20, 150)
-      @game_objects << PowerUp.new(self, @space, 150, 550, :attractor_power, 0xFF66FF33, 3)
-      @player = Player.new(self, @space, 20, 550)
-      @level_name = 'LEVEL WHERE THE WELLS ALREADY EXIST AND U CANT REMOVE THEM, HAVE TO BALANCE THEM OUT'
+      @game_objects << GoalZone.new(self, @space, 450, 350)
+      @game_objects << PowerUp.new(self, @space, 130, 550, :attractor_power, 0xFF66FF33, 1)
+      # @game_objects << Block.new(self, @space, 650, 350, 15, 50, 100)
+      #special behaviors: generate lots of blcoks, have to pile them up!
+      Timer.call_repeating(lambda{
+                             @special_behaviors = []
+                             @special_behaviors << lambda {@game_objects << MovablePoly.new(self, @space, 150, 350, 20, 15, 400)}},
+                           0.5, 0)
+      @player = Player.new(self, @space, 40, 550)
+      @level_name = 'Scatter'
     }
-
+    
     level_array
-  end
-
-  def init_and_refresh_level
-    @space = CP::Space.new
-    @space.damping = VISCOUS_DAMPING
-    @space.gravity = CP::Vec2.new(0,GRAVITY)
-    #initialize safe deletion array
-    @safe_removal_array = []
-
-    Timer.kill_all_threads
-
-    @special_draw_instructions = []
-    @special_behaviors = []
-    load_level @current_level
-
-    if DEBUG_MODE
-      @debug_force_lines = []
-    end
-
-    #set window title
-    self.caption = "The Elusive Mr. Wimbly - #{@level_name}"
-
-    #add collision functions
-    ##collision function for player and ground -> allow player to be grounded while touching wall
-    @space.add_collision_func :player, :wall do |player_shape, wall_shape|
-      player = player_shape.object
-      player.is_grounded = 500
-      true
-    end
-
-    #add collision functions
-    ##collision function for player and ground -> allow player to be grounded while touching blocks too
-    @space.add_collision_func :player, :movable_block do |player_shape, wall_shape|
-      player = player_shape.object
-      player.is_grounded = 500
-      true
-    end
-
-    @space.add_collision_func :player, :kill_zone do |player_shape, kill_zone_shape|
-      @player.kill
-      Timer.call_repeating(lambda{ @special_behaviors << lambda { init_and_refresh_level}}, 0.24, 1)
-      false
-    end
-
-    @space.add_collision_func :player, :goal_zone do |player_shape, goal_zone_shape|
-      @current_level += 1
-      init_and_refresh_level
-      false
-    end
-
-    @space.add_collision_func :player, :attractor_power do |player_shape, powerup_shape|
-      @player.activate_powerup :attractor_power, powerup_shape.object.max_uses
-      safe_remove(powerup_shape.object)
-      false
-    end
-    @space.add_collision_func :player, :repulsion_power do |player_shape, powerup_shape|
-      @player.activate_powerup :repulsion_power, powerup_shape.object.max_uses
-      safe_remove(powerup_shape.object)
-      false
-    end
-
-    #trigger collision. can be visible/invisible. trigger.object is a lambda
-    #special behaviors is in object[0], special draw instructions are in object[1]
-    #nil if no instruction
-    @space.add_collision_func :player, :trigger do |player_shape, trigger_shape|
-      if trigger_shape.object[0] != nil
-        @special_behaviors << trigger_shape.object[0]
-        end
-      if trigger_shape.object[1] != nil
-        @special_draw_instructions << trigger_shape.object[1]
-      end
-      @special_draw_instructions
-      safe_remove(trigger_shape.object[2])
-      false
-    end
-    #trugger collision for movable blocks (flip switches with blocks)
-    @space.add_collision_func :block, :trigger do |block_shape, trigger_shape|
-      if trigger_shape.object[0] != nil
-        @special_behaviors << trigger_shape.object[0]
-        end
-      if trigger_shape.object[1] != nil
-        @special_draw_instructions << trigger_shape.object[1]
-      end
-      @special_draw_instructions
-      safe_remove(trigger_shape.object[2])
-      false
-    end
   end
 
   def safe_remove game_object

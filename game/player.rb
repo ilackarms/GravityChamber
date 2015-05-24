@@ -81,8 +81,11 @@ class Player < Movable
     @spheres << PowerSphere.new(@window, @window.mouse_x, @window.mouse_y, 10, power_type)
   end
 
-  def kill
+  def kill color = nil
     @is_alive = false
+    if color != nil
+      @color = color
+    end
     @shape.collision_type = :dead
     @death_animation = Drawable::ParticleSystem.new @window
   end
