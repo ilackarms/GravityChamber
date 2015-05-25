@@ -24,7 +24,7 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 14
+    @current_level = 12
     @time_text = Gosu::Font.new(self, "Courier", 16)
     init_and_refresh_level
   end
@@ -47,7 +47,7 @@ class Game < Window
     end
 
     #set window title
-    self.caption = "The Elusive Mr. Wimbly - #{@level_name}"
+    self.caption = "Gravity Chamber ##{@current_level+1}: #{@level_name}"
 
     #add collision functions
     ##collision function for player and ground -> allow player to be grounded while touching wall
@@ -141,7 +141,7 @@ class Game < Window
       }
       @special_draw_instructions = []
       @special_draw_instructions << lambda {
-        @text.draw("THE ELUSIVE MR. WIMBLY", X_RES/2 - 250, 50, 0, 1, 1, Gosu::Color::WHITE)
+        @text.draw('GRAVITY CHAMBER', X_RES/2 - 250, 50, 0, 1, 1, Gosu::Color::WHITE)
       }
       @level_name = 'Title'
     }
@@ -451,6 +451,40 @@ class Game < Window
       @blocks = []
       @game_objects = []
       points = []
+      points << [0,5]
+      points << [1.5,5]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [7.5,5]
+      points << [10,5]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [-100,9.95]
+      points << [6,9.95]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [-100,0.25]
+      points << [100,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [6,9.95]
+      points << [6,3]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [3,7.95]
+      points << [3,0]
+      @game_objects += construct_connected_kill_zones(points)
+      @player = Player.new(self, @space, 20, 550)
+      @game_objects << PowerUp.new(self, @space, 100, 550, :repulsion_power, 0xFFC680FF, 2)
+      @game_objects << GoalZone.new(self, @space, 700, 550)
+      @level_name = 'N'
+    }
+
+    #level 11
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
       points << [0,9]
       points << [2.5,9]
       @game_objects += construct_walls(points)
@@ -472,7 +506,7 @@ class Game < Window
       @level_name = 'U'
     }
 
-    #level 11
+    #level 12
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -490,10 +524,17 @@ class Game < Window
       @game_objects += construct_frictionless_wall(points)
       points = []
       points << [5,4]
-      points << [5,7]
+      points << [5,6]
       @game_objects += construct_frictionless_wall(points)
       points = []
-      points << [5,7]
+      points << [5,6]
+      points << [6,6]
+      points << [6,6.25]
+      points << [6,6]
+      points << [7,6]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [7,6]
       points << [7,7]
       @game_objects += construct_frictionless_wall(points)
       points = []
@@ -512,7 +553,7 @@ class Game < Window
       @level_name = 'Slide'
     }
 
-    #level 12
+    #level 13
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -545,7 +586,7 @@ class Game < Window
       @level_name = 'Stacking'
     }
 
-    #level 13
+    #level 14
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -584,7 +625,7 @@ class Game < Window
       @level_name = 'Stacking 2'
     }
 
-    #level 14
+    #level 15
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -604,16 +645,16 @@ class Game < Window
       points << [100,4.25]
       @game_objects += construct_connected_kill_zones(points)
       points = []
-      points << [-100,7.25]
-      points << [100,7.25]
+      points << [-100,6.5]
+      points << [100,6.5]
       @game_objects += construct_connected_kill_zones(points)
       @game_objects << GoalZone.new(self, @space, 740, 350)
       @game_objects << PowerUp.new(self, @space, 75, 350, :repulsion_power, 0xFFC680FF, 2)
       @player = Player.new(self, @space, 20, 350)
-      @level_name = 'Railgun'
+      @level_name = 'Rail Gun'
     }
 
-    #level XX
+    #level 16
     level_array << lambda {
       @blocks = []
       @game_objects = []
@@ -635,10 +676,13 @@ class Game < Window
       #special behaviors: generate lots of blcoks, have to pile them up!
       Timer.call_repeating(lambda{
                              @special_behaviors = []
-                             @special_behaviors << lambda {@game_objects << MovablePoly.new(self, @space, 150, 350, 20, 15, 400)}},
-                           0.5, 0)
+                             @special_behaviors << lambda {@game_objects << MovablePoly.new(self, @space, 150, 350, 20, 15, 400)}
+                             @special_behaviors << lambda {@game_objects << MovablePoly.new(self, @space, 250, 350, 20, 15, 400)}
+                             @special_behaviors << lambda {@game_objects << MovablePoly.new(self, @space, 350, 350, 20, 15, 400)}
+                           },
+                           1.25, 4)
       @player = Player.new(self, @space, 40, 550)
-      @level_name = 'Scatter'
+      @level_name = 'Hops'
     }
     
     level_array
