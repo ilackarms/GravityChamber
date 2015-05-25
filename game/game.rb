@@ -24,7 +24,7 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 12
+    @current_level = 16
     @time_text = Gosu::Font.new(self, "Courier", 16)
     init_and_refresh_level
   end
@@ -47,7 +47,7 @@ class Game < Window
     end
 
     #set window title
-    self.caption = "Gravity Chamber ##{@current_level+1}: #{@level_name}"
+    self.caption = "Gravity Chamber ##{@current_level}: #{@level_name}"
 
     #add collision functions
     ##collision function for player and ground -> allow player to be grounded while touching wall
@@ -637,8 +637,8 @@ class Game < Window
       points << [1.25,5]
       @game_objects += construct_walls(points)
       points = []
-      points << [8,4.5]
-      points << [10,4.5]
+      points << [8,5]
+      points << [10,5]
       @game_objects += construct_walls(points)
       points = []
       points << [-100,4.25]
@@ -655,6 +655,71 @@ class Game < Window
     }
 
     #level 16
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      points << [0,1]
+      points << [2.5,1]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [3.5,0]
+      points << [3.5,3]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [0,2]
+      points << [1.8,2]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [2,1.5]
+      points << [2,4]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [2.2,4]
+      points << [4,4]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [5.5,2]
+      points << [5.5,5]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [5.3,5.5]
+      points << [3.5,5.5]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [3,4.5]
+      points << [3,8]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [6,0]
+      points << [6,7]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [6.5,9.5]
+      points << [6.5,7]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [5.3,8.25]
+      points << [1.5,8.25]
+      @game_objects += construct_connected_kill_zones(points)
+      points = []
+      points << [3,9]
+      points << [1.5,9]
+      points << [1.5,9.5]
+      points << [1.5,9]
+      points << [0,9]
+      @game_objects += construct_walls(points)
+      points = []
+      points << [-100,0.1]
+      points << [100,0.1]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 100, 550)
+      @game_objects << PowerUp.new(self, @space, 75, 100, :attractor_power, 0xFF66FF33, 2)
+      @player = Player.new(self, @space, 20, 100)
+      @level_name = 'Wall Jumper'
+    }
+
+    #level 17
     level_array << lambda {
       @blocks = []
       @game_objects = []
