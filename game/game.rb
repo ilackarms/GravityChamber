@@ -25,7 +25,7 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 17
+    @current_level = 0
     @time_text = Gosu::Font.new(self, "Courier", 16)
     init_and_refresh_level
   end
@@ -157,7 +157,7 @@ class Game < Window
       }
       @special_draw_instructions = []
       @special_draw_instructions << lambda {
-        @text.draw('GRAVITY CHAMBER', X_RES/2 - 250, 50, 0, 1, 1, Gosu::Color::WHITE)
+        @text.draw('GRAVITY CHAMBER', X_RES/2 - 150, 50, 0, 1, 1, Gosu::Color::YELLOW)
       }
       @level_name = 'Title'
     }
