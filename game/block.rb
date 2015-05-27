@@ -10,7 +10,7 @@ class Block
       @window = window
       @space = space
       @bounds = [CP::Vec2.new(-1 * width,-1 * height), CP::Vec2.new(-1 * width, height), CP::Vec2.new(width, height), CP::Vec2.new(width,-1 * height)]
-      create_pyhsical_poly(x, y, mass, :block)
+      create_physical_poly(x, y, mass, :block)
       @color = Gosu::Color::WHITE
     end
 

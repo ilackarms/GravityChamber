@@ -2,13 +2,23 @@ module DynamicShape
 
   class Movable
     attr_accessor :shape
+
+    def apply_impulse(vec)
+      @shape.body.apply_impulse(vec, zero_vector)
+      self
+    end
+
+    def set_velocity(vec)
+      @shape.body.v = vec
+      self
+    end
   end
 
-  def zero_vector()
+  def zero_vector
     CP::Vec2.new(0,0)
   end
 
-  def create_pyhsical_poly(x, y, mass, collision_tag)
+  def create_physical_poly(x, y, mass, collision_tag)
     moment_of_inertia = CP.moment_for_circle(mass, 5,0, zero_vector)
     body = CP::Body.new(mass, moment_of_inertia)
     @shape = CP::Shape::Poly.new(body, @bounds)#CP::Shape::Circle.new(body, 5,zero_vector)

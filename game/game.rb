@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'gosu'
-require 'chipmunk'
+require_relative 'lib/chipmunk.so'
 require_relative 'player'
 require_relative 'wall'
 require_relative 'kill_zone'
@@ -9,6 +9,7 @@ require_relative 'power_up'
 require_relative 'trigger_object'
 require_relative 'movable_poly'
 require_relative 'block'
+require_relative 'kill_block'
 require_relative 'timer'
 include Gosu
 
@@ -24,7 +25,7 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 16
+    @current_level = 17
     @time_text = Gosu::Font.new(self, "Courier", 16)
     init_and_refresh_level
   end
@@ -67,7 +68,22 @@ class Game < Window
 
     @space.add_collision_func :player, :kill_zone do |player_shape, kill_zone_shape|
       @player.kill
+      if kill_zone_shape.object != nil and kill_zone_shape.object.is_a? KillBlock
+        kill_zone_shape.object.destroy
+      end
       Timer.call_repeating(lambda{ @special_behaviors << lambda { init_and_refresh_level}}, 0.24, 1)
+      false
+    end
+
+    @space.add_collision_func :kill_zone , :kill_zone do |kill_zone_shape_1, kill_zone_shape_2|
+      if kill_zone_shape_1.object != nil and kill_zone_shape_1.object.is_a? KillBlock
+        kill_zone_shape_1.object.destroy
+        Timer.call_repeating(lambda{@special_behaviors << lambda { safe_remove kill_zone_shape_1.object}}, 0.24, 1)
+      end
+      if kill_zone_shape_2.object != nil and kill_zone_shape_2.object.is_a? KillBlock
+        kill_zone_shape_2.object.destroy
+        Timer.call_repeating(lambda{@special_behaviors << lambda { safe_remove kill_zone_shape_2.object}}, 0.24, 1)
+      end
       false
     end
 
@@ -290,7 +306,7 @@ class Game < Window
       @game_objects << TriggerObject.new(self, @space, 120, 250, 15, 15, special_lambdas, trigger_follow)
 
       @player = Player.new(self, @space, 40, 250)
-      @level_name = 'Ascend'
+      @level_name = 'Launch'
     }
 
     #level 5
@@ -387,7 +403,7 @@ class Game < Window
       @game_objects << GoalZone.new(self, @space, 450, 500)
       @game_objects << PowerUp.new(self, @space, 50, 350, :attractor_power, 0xFF66FF33, 2)
       @player = Player.new(self, @space, 20, 250)
-      @level_name = 'In the Bucket'
+      @level_name = 'Slingshot'
     }
 
     #level 8
@@ -637,8 +653,8 @@ class Game < Window
       points << [1.25,5]
       @game_objects += construct_walls(points)
       points = []
-      points << [8,5]
-      points << [10,5]
+      points << [8,4.9]
+      points << [10,4.9]
       @game_objects += construct_walls(points)
       points = []
       points << [-100,4.25]
@@ -703,11 +719,10 @@ class Game < Window
       points << [1.5,8.25]
       @game_objects += construct_connected_kill_zones(points)
       points = []
-      points << [3,9]
-      points << [1.5,9]
       points << [1.5,9.5]
-      points << [1.5,9]
-      points << [0,9]
+      points << [1.5,8.5]
+      points << [0.1,8.5]
+      points << [0.1,10]
       @game_objects += construct_walls(points)
       points = []
       points << [-100,0.1]
@@ -725,12 +740,8 @@ class Game < Window
       @game_objects = []
       points = []
       points << [0,1.5]
-      points << [3,1.5]
-      @game_objects += construct_walls(points)
-      points = []
-      points << [4,0.1]
-      points << [6,0.1]
-      @game_objects += construct_walls(points)
+      points << [10,1.5]
+      @game_objects += construct_frictionless_wall(points)
       points = []
       points << [-100,0.25]
       points << [100,0.25]
@@ -741,11 +752,9 @@ class Game < Window
       #special behaviors: generate lots of blcoks, have to pile them up!
       Timer.call_repeating(lambda{
                              @special_behaviors = []
-                             @special_behaviors << lambda {@game_objects << MovablePoly.new(self, @space, 150, 350, 20, 15, 400)}
-                             @special_behaviors << lambda {@game_objects << MovablePoly.new(self, @space, 250, 350, 20, 15, 400)}
-                             @special_behaviors << lambda {@game_objects << MovablePoly.new(self, @space, 350, 350, 20, 15, 400)}
-                           },
-                           1.25, 4)
+                             @special_behaviors << lambda {@game_objects << KillBlock.new(self, @space, 150, 350, 20, 15, 80)}
+                             @special_behaviors << lambda {@game_objects << KillBlock.new(self, @space, 250, 350, 20, 15, 80)}
+                             @special_behaviors << lambda {@game_objects << KillBlock.new(self, @space, 350, 350, 20, 15, 80)}}, 1, 12)
       @player = Player.new(self, @space, 40, 550)
       @level_name = 'Hops'
     }
@@ -767,7 +776,8 @@ class Game < Window
       |dynamic_shape|
       if dynamic_shape.is_a?(DynamicShape::Movable)
         body_pos = dynamic_shape.shape.body.p
-        dynamic_shape.shape.body.apply_impulse((p - body_pos)*magnitude / (p.dist(body_pos)**2), zero_vector)
+        # dynamic_shape.shape.body.apply_impulse((), zero_vector)
+        dynamic_shape.apply_impulse((p - body_pos) * magnitude  / (p.dist(body_pos)**2))
         if DEBUG_MODE
           @debug_force_lines << [p, body_pos]
         end
@@ -887,5 +897,7 @@ class Game < Window
 
 end
 
-window = Game.new
-window.show
+if not defined?(Ocra)
+  window = Game.new
+  window.show
+end
