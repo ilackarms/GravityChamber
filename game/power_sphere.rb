@@ -1,4 +1,5 @@
-require_relative 'lib/chipmunk.so'
+#require_relative 'lib/chipmunk.so'
+require 'chipmunk'
 require 'gosu'
 require_relative 'drawables'
 
