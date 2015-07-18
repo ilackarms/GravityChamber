@@ -26,7 +26,7 @@ class Game < Window
 
   def initialize
     super(X_RES, Y_RES, false)
-    @current_level = 0
+    @current_level = 18
     @time_text = Gosu::Font.new(self, "Courier", 16)
     init_and_refresh_level
   end
@@ -736,6 +736,31 @@ class Game < Window
     }
 
     #level 17
+    level_array << lambda {
+      @blocks = []
+      @game_objects = []
+      points = []
+      points << [0,1.5]
+      points << [10,1.5]
+      @game_objects += construct_frictionless_wall(points)
+      points = []
+      points << [-100,0.25]
+      points << [100,0.25]
+      @game_objects += construct_connected_kill_zones(points)
+      @game_objects << GoalZone.new(self, @space, 450, 350)
+      @game_objects << PowerUp.new(self, @space, 130, 550, :attractor_power, 0xFF66FF33, 1)
+      # @game_objects << Block.new(self, @space, 650, 350, 15, 50, 100)
+      #special behaviors: generate lots of blcoks, have to pile them up!
+      Timer.call_repeating(lambda{
+                             @special_behaviors = []
+                             @special_behaviors << lambda {@game_objects << KillBlock.new(self, @space, 150, 350, 20, 15, 80)}
+                             @special_behaviors << lambda {@game_objects << KillBlock.new(self, @space, 250, 350, 20, 15, 80)}
+                             @special_behaviors << lambda {@game_objects << KillBlock.new(self, @space, 350, 350, 20, 15, 80)}}, 1, 12)
+      @player = Player.new(self, @space, 40, 550)
+      @level_name = 'Hops'
+    }
+
+    #level 18
     level_array << lambda {
       @blocks = []
       @game_objects = []
