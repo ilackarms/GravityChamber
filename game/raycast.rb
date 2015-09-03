@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'gosu'
-require_relative 'lib/chipmunk.so'
+require 'chipmunk'
 require_relative 'player'
 require_relative 'wall'
 require_relative 'game'

@@ -1,5 +1,5 @@
 require 'gosu'
-require_relative 'lib/chipmunk.so'
+require 'chipmunk'
 
 module Drawable
   class Circle
